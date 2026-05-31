@@ -456,10 +456,36 @@ input {
   color: #475563;
 }
 
+    /* 음악 토글 버튼 전용 스타일 */
+#toggleMusic {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 2px solid #3b66f5;
+    background: #ffffff;
+    color: #3b66f5;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-right: 10px;
+}
+
+#toggleMusic:hover {
+    background: #3b66f5;
+    color: #ffffff;
+}
+
+/* 음악이 꺼졌을 때 상태 표시를 위한 클래스 */
+#toggleMusic.off {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+    color: #94a3b8;
+}
+
 
   </style>
 </head>
 <body>
+  <audio id="bgm" src="./assets/Glass_Attic.mp3" loop preload="auto"></audio>
 <div class="top-controls">
     <h2 class="game-title">🍒⛓️애리체스⛓️</h2>
     
@@ -468,6 +494,7 @@ input {
         <input id="playerTitle" type="text">
         <button id="loadCharsBtn">캐릭터 불러오기</button>
         <button onclick="startBattle()">전투 시작!</button>
+        <button id="toggleMusic">음악 ON 🎵</button>
         <span id="scoreDisplay" style="margin-left: 20px; font-weight: 900; color: #ff0080; font-size: 20px;">점수: 0</span>
     </div>
 
@@ -512,6 +539,9 @@ input {
 
 
 <script>
+
+
+  
   // --- 게임 상태 관리 변수 ---
 let currentRound = 1;
 let totalScore = 0;
@@ -524,6 +554,21 @@ function addScore(points) {
 
 
 }
+// 음악
+document.getElementById("toggleMusic").addEventListener("click", function() {
+    const bgm = document.getElementById("bgm");
+    const btn = this;
+    
+    if (bgm.paused) {
+        bgm.play();
+        btn.textContent = "음악 ON 🎵";
+        btn.classList.remove("off");
+    } else {
+        bgm.pause();
+        btn.textContent = "음악 OFF 🔇";
+        btn.classList.add("off");
+    }
+});
 
 
 
