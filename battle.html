@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>애리 미니게임 (로그/선택창 3x6)</title>
+  <style>
+ body { 
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; 
+  background-color: #ffffff; /* 요청하신 순수 흰색 배경 */
+  color: #1e293b;
+  margin: 0;
+  padding: 20px;
+}
+
+.container {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.left-panel { 
+  width: 600px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 15px; 
+}
+
+/* 배틀 그리드: 흰 배경에서 선명하게 보이도록 블루그레이 베이스 유지 */
+.battleGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 80px);
+  grid-template-rows: repeat(6, 80px); 
+  gap: 6px;
+  background: #eaf0fa; 
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px solid #3b66f5; 
+  box-shadow: 0 10px 30px rgba(59, 102, 245, 0.12);
+  height: 520px; /* (80px * 6) + 12px(패딩) * 2 + 12px(gap) = 약 520px */
+  flex-shrink: 0;
+}
+
+.cell {
+  background: #ffffff;
+  border: 1px solid #b4c6ef;
+  border-radius: 8px;
+  position: relative;
+  overflow: visible;
+  transition: all 0.2s ease;
+  perspective: 600px;
+}
+
+.cell.dragover {
+  border: 2px dashed #3b66f5;
+  background: #f0f4fe;
+}
+
+/* 1. 셀(Cell) 자체의 바닥 발광 효과 */
+.cell.UR-active {
+  z-index: 10; /* 다른 셀보다 위로 보이게 */
+  transition: all 0.5s ease;
+}
+/* 1. CSS 변수 선언 (브라우저에게 이 변수는 색상 데이터임을 알려줌) */
+@property --aura-alpha {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.6;
+}
+
+/* 2. 오로라 요소 위치 보정 */
+.cell.UR-active::before {
+  content: "";
+  position: absolute;
+  /* top/left를 사용해 정중앙으로 강제 고정 */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); 
+  
+  width: 105%;
+  height: 105%;
+/* 30% 지점에서 색이 시작되도록 조정 */
+/* 변수(--aura-alpha)를 사용하여 색상 투명도를 설정 */
+  background: radial-gradient(circle, 
+    transparent 30%, 
+    rgba(255, 0, 80, calc(var(--aura-alpha) + 0.3)) 50%, 
+    rgba(180, 150, 255, var(--aura-alpha)) 80%, 
+    transparent 100%
+  );
+  filter: blur(15px);
+  animation: color-breath 4s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 0; /* 카드보다 아래로 깔기 */
+}
+
+/* 2. 카드 테두리 애니메이션도 같은 톤으로 수정 */
+.char-grid.placed.UR {
+  border: 2px solid #ff0080 !important;
+  box-shadow: 0 0 25px rgba(128, 0, 255, 0.6) !important;
+  animation: card-float-purple 3s infinite ease-in-out;
+}
+/* 2. 변수를 애니메이션 시킴 */
+@keyframes color-breath {
+  0% { --aura-alpha: 0.2; }
+  50% { --aura-alpha: 0.6; }
+  100% { --aura-alpha: 0.2; }
+}
+@keyframes card-float-purple {
+  0%, 100% { transform: rotateX(70deg) scale(1.4) translateY(0px); }
+  50% { transform: rotateX(72deg) scale(1.42) translateY(-8px); }
+}
+.char-wrapper { 
+  position: relative; 
+  display: flex; 
+  justify-content: center; 
+}
+
+/* 캐릭터 카드: 흰 배경 위에서 대비감이 살도록 테두리와 그림자 최적화 */
+.char-card {
+  width: 160px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: grab;
+  border: 2px solid #3b66f5; 
+  box-shadow: 0 6px 16px rgba(59, 102, 245, 0.15); /* 그림자를 살짝 더 선명하게 */
+  margin: 8px;
+  overflow: hidden; 
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.char-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(59, 102, 245, 0.25);
+}
+
+.char-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 6px 10px;
+  box-sizing: border-box;
+  background: #3b66f5; 
+  color: #ffffff;
+  font-weight: bold;
+}
+
+/* 등급 뱃지 */
+.grade-badge {
+  background: #ffffff;
+  color: #3b66f5;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* 코스트 */
+.cost-display {
+  color: #ffca28; 
+  font-size: 12px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.char-img {
+  display: block;
+  object-fit: contain;
+  max-width: 110px;
+  max-height: 110px;
+  margin-top: 8px;
+}
+
+.char-name {
+  margin-top: 6px;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.char-power {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.char-grid {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1; /* 오로라(0)보다 위에 배치 */
+  
+  /* 3D 효과를 위한 핵심 설정 */
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 배치 완료된 상태 (JS로 .placed 클래스를 추가하세요) */
+.char-grid.placed {
+  transform: rotateX(-60deg) rotateY(0deg) scale(1);
+  box-shadow: 10px 20px 30px rgba(0, 0, 0, 0.4);
+}
+
+.char-grid img {
+  width: 80%;
+  min-height: 50%;
+  object-fit: contain;
+  /* 카드 이미지도 3D 공간에 포함 */
+  transform: translateZ(-40px);
+}
+
+.char-grid .grade-badge {
+  position: absolute;
+  top: -150px;
+
+  left: 4px;
+  background: #3b66f5;
+  color: #ffffff;
+  font-size: 15px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  
+  /* 배지를 이미지보다 앞으로 튀어나오게 함 */
+  transform: translateZ(35px);
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+}
+.grade-badge.N  { background: #9e9e9e; }
+.grade-badge.R  { background: #4caf50; }
+.grade-badge.SR { background: #2196f3; box-shadow: 0 0 8px #2196f3; }
+.grade-badge.SSR { background: linear-gradient(135deg, #f44336, #e91e63); box-shadow: 0 0 12px #e91e63; }
+.grade-badge.UR {
+  background: linear-gradient(45deg, #ff0080, #8000ff);
+  color: white;
+  text-shadow: 0 0 5px rgba(255,255,255,0.5);
+  box-shadow: 0 0 15px #ff0080;
+}
+
+/* 3. UR 등급 전용 애니메이션 */
+@keyframes gold-glow {
+  from { box-shadow: 0 0 10px #ffd700; border-color: #ffd700; }
+  to { box-shadow: 0 0 25px #ffd700; border-color: #fff; }
+}
+
+/* 체력바 */
+.hpbar {
+  position: absolute;
+  top: -115px; 
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+}
+
+.hpfill {
+  height: 100%;
+  background-color: #10b981;
+  transition: width 0.3s ease;
+}
+
+.side-panels { 
+display: flex;
+  flex-direction: column; /* 로그와 선택창을 위아래로 배치 */
+  gap: 20px;
+  height: 520px;          /* 배틀 그리드와 동일한 높이로 고정 */
+}
+
+/* 하단 패널: 배경이 하얗기 때문에 내부에 아주 연한 블루그레이(#f8fafc)를 살짝 깔아 경계를 줬습니다 */
+.log-panel, .select-panel {
+ flex: 0 0 auto;
+  min-width: 600px;
+  height: 269px;
+  background: #f8fafc; 
+  border: 2px dashed #3b66f5; 
+  border-radius: 12px;
+  padding: 14px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  box-shadow: 0 4px 16px rgba(59, 102, 245, 0.06);
+}
+
+.top-controls { 
+display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    width: 100%;             /* 화면 전체 너비 */
+    position: fixed;         /* 상단 고정 */
+    top: 0;
+    left: 0;
+    z-index: 1000;           /* 다른 요소들보다 위로 배치 */
+    background: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    white-space: nowrap;
+}
+
+/* 제목: 왼쪽 끝 배치 */
+.game-title {
+    margin: 0;
+    font-size: 24px;
+    color: #1e293b;
+    flex: 1; /* 왼쪽 공간을 확보하여 컨트롤러를 중앙으로 밀어냅니다 */
+    text-align: left;
+}
+/* 컨트롤러: 중앙 배치 */
+.controls-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1; /* 제목과 동일한 비율을 가져서 중앙 정렬을 도움 */
+    justify-content: center; /* 중앙 정렬 핵심 */
+}
+/* 오른쪽 끝에 뭔가를 더 두고 싶다면 아래 스타일 추가 */
+.spacer {
+    flex: 1; /* 마지막에 빈 div를 하나 넣으면 제목은 왼쪽, 컨트롤러는 완벽 중앙이 됨 */
+}
+
+.projectile {
+  position: absolute;
+  /* 이동은 transition이 담당 */
+  transition: all 1s linear; 
+
+/* 부모(.cell)를 꽉 채우게 설정 */
+ width: var(--size);
+  height: var(--size);
+  background-image: var(--url);
+  background-repeat: no-repeat;
+
+  background-size: var(--total-size);
+
+
+
+  animation: play-any-sprite 1s steps(var(--frames), jump-none) infinite;
+  
+  pointer-events: none;
+  z-index: 999;
+}
+
+@keyframes play-any-sprite {
+  from { background-position: 0px 0px; }
+  to { 
+    /* 핵심: cols와 rows 만큼 전체를 다 지나가야 딱 맞습니다 */
+  background-position: calc(-1 * var(--size) * (var(--cols) - 1)) 
+                         calc(-1 * var(--size) * (var(--rows) - 1));
+  }
+}
+
+
+   /* 선택창을 가로 정렬 */
+#playerChars, #enemyChars {
+  display: flex;
+  flex-direction: row;   /* 가로축 정렬 */
+  gap: 10px;             /* 캐릭터 사이 간격 */
+  overflow-x: auto;      /* 넘치면 가로 스크롤 */
+  white-space: nowrap;   /* 줄바꿈 방지 */
+  /* 핵심: 부모 컨테이너 내부에서 영역을 넘지 않도록 제한 */
+  width: 100%;            /* 부모가 허용하는 만큼만 씀 */
+  max-width: 500px; 
+  padding-bottom: 10px; /* 스크롤바 공간 확보 */
+
+  /* 3. 공간 확보 */
+  padding: 10px;        /* 안쪽 여백 추가 */
+
+  
+  /* 4. [중요] 카드가 너무 작아지는 것 방지 */
+  flex-shrink: 0;       /* 부모가 작아져도 내 크기는 유지해라 */
+}
+
+/* ⭐ 내부 캐릭터 카드가 쪼그라드는 현상 방지 */
+#playerChars .char-card, 
+#enemyChars .char-card {
+  flex-shrink: 0;        /* 부모 크기가 줄어들어도 내 크기(160px) 유지 */
+}
+/* 배틀 로그 */
+#battleLog {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  background: #ffffff; /* 로그 내부도 깔끔하게 화이트 처리 */
+  color: #334155;
+  padding: 12px;
+  border-radius: 8px;
+  font-family: 'Pretendard', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  border: 1px solid #cbd5e1;
+}
+
+#battleLog br {
+  margin-bottom: 4px;
+}
+
+/* 스크롤바 디자인 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b66f5;
+}
+
+
+/* 상단 컨트롤러 레이아웃 */
+.top-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  background: #ffffff;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* 세련된 버튼 스타일 */
+button {
+  background-color: #ffffff;
+  color: #1e293b;            /* 아주 진한 회색 (검정색보다 고급스러움) */
+  border: 1.5px solid #3b82f6; /* 약간 얇고 선명한 테두리 */
+  padding: 5px 15px;         /* 좌우를 조금 더 길게 하여 균형 맞춤 */
+  border-radius: 4px;        /* 둥근 정도를 낮춰서 각진 느낌으로(모던함) */
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* 마우스 올렸을 때 */
+button:hover {
+  background-color: #eff6ff;
+  border-color: #2563eb;
+}
+
+/* 입력창 스타일 (버튼과 높이 맞추기) */
+input {
+  padding: 5px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #475563;
+}
+
+
+  </style>
+</head>
+<body>
+<div class="top-controls">
+    <h2 class="game-title">🍒⛓️애리체스⛓️</h2>
+    
+    <div class="controls-right">
+        <label>플레이어 이름: </label>
+        <input id="playerTitle" type="text">
+        <button id="loadCharsBtn">캐릭터 불러오기</button>
+        <button onclick="startBattle()">전투 시작!</button>
+        <span id="scoreDisplay" style="margin-left: 20px; font-weight: 900; color: #ff0080; font-size: 20px;">점수: 0</span>
+    </div>
+
+    <div class="spacer" style="flex: 1;"></div>
+</div>
+  
+  
+
+
+  <div class="container" style="display: flex; gap: 20px;">
+    
+    <div class="field-panel" style="display: flex; flex-direction: column; gap: 10px;">
+      <h3>전투 필드</h3>
+      <div id="battleGrid" class="battleGrid">
+        </div>
+    </div>
+
+    <div class="side-panels" style="display: flex; flex-direction: column; gap: 10px;">
+      <h3 id="playerCost">코스트: 0 / 8</h3>
+      <div class="log-panel">
+        <h4>전투 로그</h4>
+        <div id="battleLog" style="height: 200px; overflow-y: scroll; border: 1px solid #ccc;"></div>
+      </div>
+      
+       <div class="select-panel">
+            <h4>애리 선택</h4>
+            <div>
+              <h5 id="playerGridTitle">플레이어 캐릭터</h5>
+              <div id="playerChars">
+             
+            </div>
+              </div>
+            </div>
+            <div>
+
+             
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+<script>
+  // --- 게임 상태 관리 변수 ---
+let currentRound = 1;
+let totalScore = 0;
+let battleInterval = null;
+let isBattleRunning = false; // 중복 실행 방지용
+
+function addScore(points) {
+    totalScore += points;
+    document.getElementById("scoreDisplay").innerText = `점수: ${totalScore}`;
+
+
+}
+
+
+
+// 게임 오버 처리 함수
+function gameOver() {
+    clearInterval(battleInterval);
+    isBattleRunning = false;
+    
+    alert(`게임 오버! 최종 점수: ${totalScore}점`);
+    log(`=== 게임 오버 ===`);
+    
+    // 1. 그리드를 게임 오버 화면으로 덮어씌움
+    const grid = document.getElementById("battleGrid");
+    grid.innerHTML = `
+        <div id="gameOverScreen" style="grid-column: 1 / -1; grid-row: 1 / -1; display:flex; flex-direction:column; align-items:center; justify-content:center; background: rgba(255,255,255,0.9); z-index: 100; border-radius: 12px; gap: 20px;">
+            <h1 style="color: #1e3a8a; font-size: 3rem; margin: 0;">GAME OVER</h1>
+            <h2 style="color: #ff0080; font-size: 2rem; margin: 0;">최종 점수: ${totalScore}점</h2>
+            <button id="restartBtn" style="padding: 15px 30px; font-size: 1.2rem; cursor: pointer; background: #3b66f5; color: white; border: none; border-radius: 8px;">다시 하기</button>
+        </div>
+    `;
+
+    // 2. 다시 하기 버튼 이벤트 리스너 추가
+    document.getElementById("restartBtn").addEventListener("click", function() {
+        resetGame(); // 게임 상태 초기화 함수 호출
+    });
+
+    // 3. 입력창 및 버튼 다시 활성화
+    const inputField = document.getElementById('playerTitle');
+    const loadBtn = document.getElementById('loadCharsBtn');
+    inputField.disabled = false;
+    loadBtn.disabled = false;
+    inputField.style.backgroundColor = "#ffffff";
+    inputField.style.cursor = "text";
+    loadBtn.style.backgroundColor = "";           // ""로 설정하면 CSS에 정의된 원래 색상으로 돌아갑니다
+    loadBtn.style.opacity = "1";                  // 투명도 복구
+    loadBtn.style.cursor = "pointer";             // 버튼 커서 복구
+}
+
+// 게임 초기화 함수 (별도로 구현 필요)
+function resetGame() {
+    // 1. 그리드 복구 (36개의 빈 셀을 다시 만드는 로직)
+    initGrid(); // 이 함수는 본인의 코드에 이미 있을 것입니다.
+    currentRound = 1;
+    // 2. 점수 및 변수 초기화
+    totalScore = 0;
+    document.getElementById("scoreDisplay").innerText = "점수: 0";
+    log("게임을 새로 시작합니다.");
+    
+    // 3. 기타 필요한 초기화 (카드 리스트 삭제 등)
+    document.getElementById("playerChars").innerHTML = "";
+    document.getElementById("battleLog").innerHTML = "";
+}
+
+
+function initGrid() {
+  const grid = document.getElementById("battleGrid");
+  grid.innerHTML = ""; // 초기화
+
+  for (let i = 0; i < 36; i++) { // 36칸으로 변경
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    
+    // 좌표 계산 (6x6)
+    const x = i % 6;
+    const y = Math.floor(i / 6);
+    
+    cell.addEventListener("dragover", e => { e.preventDefault(); cell.classList.add("dragover"); });
+    cell.addEventListener("dragleave", () => cell.classList.remove("dragover"));
+
+    
+    
+    cell.addEventListener("drop", e => {
+      e.preventDefault();
+      cell.classList.remove("dragover");
+
+        // 1. [핵심] 이미 유닛이 들어있는 셀인지 확인!
+      if (cell.dataset.char) {
+          log("⚠️ 이미 유닛이 배치된 곳입니다!");
+          // 여기서 dragging 클래스만 제거해서 카드가 다시 돌아오게 할 수 있습니다.
+        document.querySelector(".dragging")?.classList.remove("dragging");
+          return; // 여기서 함수를 멈춰서 배치를 막음
+      }
+      
+      const rawData = JSON.parse(e.dataTransfer.getData("text"));
+      const data = { ...rawData };
+      data.uniqueId = 'char_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      
+      // [중요] y좌표를 보고 진영 판별 (0,1,2행=플레이어 / 3,4,5행=적)
+      // 드롭 시점 (initGrid 내부)
+      data.x = x; 
+      data.y = y;
+      data.side = 'player'; 
+      data.maxHp = data.hp;
+      data.range = data.range ;
+
+      // 코스트 제한 체크
+      const grade = data.grade || "N";
+      const cost = COST_TABLE[grade] || 0;
+      
+      // 현재 배치된 유닛들 중 같은 진영의 코스트 합계 계산
+      let currentCost = 0;
+      document.querySelectorAll("#battleGrid .cell").forEach(c => {
+        if (c.dataset.char) {
+          let d = JSON.parse(c.dataset.char);
+          if (d.side === data.side) currentCost += COST_TABLE[d.grade] || 0;
+        }
+      });
+
+      if (currentCost + cost > (data.side === 'player' ? PLAYER_COST_LIMIT : ENEMY_COST_LIMIT)) {
+        alert(`${data.side === 'player' ? '플레이어' : '적군'} 코스트 초과!`);
+        return;
+      }
+
+      // 데이터 및 화면 적용
+      cell.dataset.char = JSON.stringify(data);
+      cell.innerHTML = `
+        <div class="char-grid placed">
+          <div class="hpbar"><div class="hpfill" style="width:100%"></div></div>
+          <img src="${data.img}" alt="${data.name}">
+          <div class="grade-badge ${grade}">${data.grade}</div>
+        </div>`;
+
+      if (grade === "UR") cell.classList.add("UR-active");
+      
+      const draggedEl = document.querySelector(".dragging");
+      if (draggedEl) draggedEl.remove();
+      updateCostDisplay();
+
+      
+
+      // [추가] 배치 완료 후, 선택창(`playerChars`)이 비었는지 확인
+    const playerCharsContainer = document.getElementById("playerChars");
+    
+    // 선택창에 남아있는 .char-card 개수를 셉니다.
+    const remainingCards = playerCharsContainer.querySelectorAll(".char-card").length;
+   
+      });
+
+        
+        grid.appendChild(cell);
+      }
+    }
+
+function updateTitle(type){
+  if(type==="player"){
+    const title=document.getElementById("playerTitle").value;
+    document.getElementById("playerGridTitle").innerText=title;
+  }else{
+    const title=document.getElementById("enemyTitle").value;
+    document.getElementById("enemyGridTitle").innerText=title;
+  }
+}
+
+
+function updateCostDisplay(){
+  let playerCost = 0;
+  document.querySelectorAll("#battleGrid .cell").forEach(c=>{
+    // ⭐ [수정] 데이터가 있고, '동시에 화면에 캐릭터(.char-grid)가 존재할 때만' 코스트 계산!
+    if(c.dataset.char && c.querySelector(".char-grid")){
+      let d = JSON.parse(c.dataset.char);
+      playerCost += COST_TABLE[d.grade] || 0;
+    }
+  });
+  document.getElementById("playerCost").textContent = `코스트: ${playerCost} / ${PLAYER_COST_LIMIT}`;
+
+
+}
+
+
+document.querySelectorAll("#playerChars .char-card").forEach(el=>{
+  el.addEventListener("dragstart", e=>{
+    const data = {
+      name: el.dataset.name,
+      grade: el.dataset.grade,
+      hp: el.dataset.hp,
+      atk: el.dataset.atk,
+      img: el.dataset.img
+    };
+    e.dataTransfer.setData("text", JSON.stringify(data));
+
+   
+  });
+  
+});
+
+
+
+
+
+initGrid();
+
+
+// [함수 2] 승리 조건 체크
+function isRoundCleared() {
+    const enemies = Array.from(document.querySelectorAll("#battleGrid .cell"))
+        .filter(c => c.dataset.char)
+        .map(c => JSON.parse(c.dataset.char))
+        .filter(u => u.side === 'enemy' && u.hp > 0);
+    
+    return enemies.length === 0;
+}
+
+
+function isRounddefeat() {
+    const players = Array.from(document.querySelectorAll("#battleGrid .cell"))
+        .filter(c => c.dataset.char)
+        .map(c => JSON.parse(c.dataset.char))
+        .filter(u => u.side === 'player' && u.hp > 0);
+    
+    return players.length === 0;
+}
+
+
+// 2. 적 스폰 함수 (라운드에 맞춰 적 생성)
+async function prepareRound(round) {
+    log(`라운드 ${round} 준비: 적 스폰 중...`);
+
+
+    let users = await fetchSheetData(); 
+    if (!users) return;
+
+    const enemyMaster = users.find(u => u.nickname === "스으리슬쩍");
+    if (!enemyMaster) {
+        console.error("적군 데이터를 가진 유저를 찾을 수 없습니다.");
+        return;
+    }
+    
+    // 2. N등급 카드의 이미지를 딱 하나만 가져옴
+    const nGradeCard = enemyMaster.cards.find(c => c.grade === "N");
+    const nGradeImg = nGradeCard ? nGradeCard.img : CONFIG.FALLBACK_IMAGE;
+
+    
+    const cells = Array.from(document.querySelectorAll("#battleGrid .cell"));
+    
+    // 적 진영(위측 3, 4, 5열) 중 비어있는 셀만 찾기
+    // (그리드가 6열(0~5) 기준이라고 가정)
+    const emptyEnemyCells = cells.filter((c, index) => {
+        const y = Math.floor(index / 6); // 6열 그리드 기준
+        return y <= 4 && !c.dataset.char;
+    });
+
+    // 스폰할 적의 수 설정 (라운드가 오를수록 많아짐, 최대 빈칸 수까지만)
+    const spawnCount = Math.min(emptyEnemyCells.length, 2 + Math.floor(round / 2)); 
+
+    // 빈 칸을 무작위로 섞어서 랜덤 위치에 배치
+    emptyEnemyCells.sort(() => Math.random() - 0.5);
+
+    for (let i = 0; i < spawnCount; i++) {
+        const targetCell = emptyEnemyCells[i];
+        const cellIndex = cells.indexOf(targetCell);
+        
+        // 라운드에 따라 적 스탯(체력, 공격력) 강화
+        const enemyData = {
+            uniqueId: `enemy_${round}_${i}_${Date.now()}`,
+            name: `오염된 밤티 애리 Lv.${round}`,
+            side: "enemy",
+            grade: "N", // N등급 이펙트 사용
+            hp: 8000 + (round * 2000),     // 기본 8000 + 라운드당 2000
+            maxHp: 8000 + (round * 2000),
+            atk: 500 + (round * 150),      // 공격력 스케일링
+            range: 2,
+            x: cellIndex % 6,
+            y: Math.floor(cellIndex / 6),
+            img: nGradeImg // N등급 카드의 이미지 사용
+        };
+
+        // 셀에 데이터 저장 및 UI(이미지, 체력바) 그리기
+        targetCell.dataset.char = JSON.stringify(enemyData);
+        targetCell.innerHTML = `
+            <div style="position: relative; width: 100%; height: 100%;">
+                <img src="${enemyData.img}" style="width:100%; height:100%; object-fit:cover; border-radius:8px; border: 2px solid #ff4444;">
+                <div class="hpbar" style="position:absolute; bottom:-10px; left:0; width:100%; height:8px; background:#333; border-radius:4px; overflow:hidden;">
+                    <div class="hpfill" style="width:100%; height:100%; background:red; transition: width 0.2s;"></div>
+                </div>
+            </div>
+        `;
+    }
+    
+    log(`적 ${spawnCount}마리가 나타났습니다!`);
+}
+
+
+
+
+
+function log(msg) {
+  const logBox = document.getElementById("battleLog");
+  logBox.innerHTML += msg + "<br>";
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+function shootProjectile(fromCell, toCell,type){
+  const config = EFFECT_CONFIGS[type];
+  const container = document.querySelector(".container"); // 부모 컨테이너
+  const proj = document.createElement("div");
+// 공통 클래스 + 타입별 클래스
+  proj.className = `projectile ${type}`;
+
+  // 1. 개별 프레임 크기 (size)
+  const size = config.size;
+
+  // 2. 전체 스프라이트 시트의 물리적 크기 계산
+  const totalWidth = size * config.cols;
+  const totalHeight = size * config.rows;
+
+// 타입별 스타일을 CSS 변수로 적용
+  proj.style.setProperty('--url', `url('${config.url}')`);
+  proj.style.setProperty('--size', `${config.size}px`);
+  proj.style.setProperty('--frames', config.frameCount);
+
+    // 그리드 정보가 있다면 전달, 없다면 기본값(1) 적용
+  proj.style.setProperty('--rows', config.rows || 1);
+  proj.style.setProperty('--cols', config.cols || 1);
+  proj.style.setProperty('--total-size', `${totalWidth}px ${totalHeight}px`);
+
+  container.appendChild(proj);
+  
+
+
+  // 시작 위치 (셀의 정중앙, 부모 기준 좌표)
+  const startX = fromCell.offsetLeft + (fromCell.offsetWidth / 2)- (config.size/2);
+  const startY = fromCell.offsetTop  + (fromCell.offsetHeight / 2)- (config.size/2);
+
+  proj.style.left = startX + "px";
+  proj.style.top  = startY + "px";
+
+requestAnimationFrame(() => { 
+    const endX = toCell.offsetLeft + (toCell.offsetWidth / 2) - (config.size / 2);
+    const endY = toCell.offsetTop + (toCell.offsetHeight / 2) - (config.size / 2);
+    proj.style.left = endX + "px";
+    proj.style.top = endY + "px";
+  });
+
+  setTimeout(()=>proj.remove(),1600);
+}
+
+
+// 이펙트 종류별 설정값 저장
+const EFFECT_CONFIGS = {
+    N: {
+    url: './assets/1.png',
+    frameCount: 8,
+    size: 180 ,    // 원하는 크기
+    rows: 1,      // 행 개수
+    cols: 8       // 열 개수
+  },
+    R: {
+    url: './assets/2.png',
+    frameCount: 10,
+    size: 160 ,    // 원하는 크기
+    rows: 1,      // 행 개수
+    cols: 10       // 열 개수
+  },
+  S: {
+    url: './assets/3.png',
+    frameCount:8,
+    size: 180,
+    cols: 8,
+    rows: 1
+  },
+  SR: {
+    url: './assets/4_2.png',
+    frameCount: 4,
+    size: 180,
+    cols: 4,
+    rows: 1
+  },
+
+    SSR: {
+    url: './assets/5.png',
+    frameCount: 8,
+    size: 180 ,    // 원하는 크기
+    rows: 1,      // 행 개수
+    cols: 8       // 열 개수
+  },
+  UR: {
+    url: './assets/6.png',
+    frameCount: 5,
+    size: 180,
+    cols: 5,
+    rows: 1
+  }
+};
+
+async function setupCharacters() {
+  const users = await fetchSheetData();
+  if (!users) return;
+
+  const playerDiv = document.getElementById("playerChars");
+  const enemyDiv  = document.getElementById("enemyChars");
+
+  playerDiv.innerHTML = "";
+  enemyDiv.innerHTML  = "";
+
+  return charDiv;
+}
+
+
+// 버튼 클릭 시 실행
+document.getElementById("loadCharsBtn").addEventListener("click", setupCharactersByUser);
+
+async function setupCharactersByUser() {
+   updateTitle("player");
+
+
+  // 구글 시트에서 데이터 가져오기
+const users = await fetchSheetData();
+if (!users) {
+  console.error("❌ 구글 시트에서 데이터를 가져오지 못했습니다.");
+  return;
+}
+
+
+
+// ✅ 데이터가 잘 들어왔는지 확인
+console.log("✅ 구글 시트에서 가져온 데이터:", users);
+
+  // 입력칸에서 유저 이름 가져오기
+  const playerName = document.getElementById("playerTitle").value.trim();
+ 
+
+  const playerDiv = document.getElementById("playerChars");
+
+
+  playerDiv.innerHTML = "";
+
+
+  // 플레이어 캐릭터 세팅
+  const playerUser = users.find(u => u.nickname === playerName);
+  if(playerUser){
+    playerUser.cards.forEach(card=>{
+      const charDiv = createCharDiv(card);
+      playerDiv.appendChild(charDiv);
+    });
+
+    // 2. 캐릭터 불러오기가 성공했다면 비활성화
+    const inputField = document.getElementById('playerTitle');
+    const loadBtn = document.getElementById('loadCharsBtn');
+    inputField.disabled = true;
+    loadBtn.disabled = true;
+
+    // 3. UI 피드백 (선택사항: 비활성화 상태임을 알림)
+    inputField.style.backgroundColor = "#e2e8f0"; // 비활성화 느낌의 색상
+    inputField.style.cursor = "not-allowed";
+    loadBtn.style.backgroundColor = "#e2e8f0";
+    loadBtn.style.cursor = "not-allowed";
+
+  }else{
+    console.warn(`⚠️ 플레이어 이름 "${playerName}"에 해당하는 데이터가 없습니다.`);
+  }
+
+
+}
+
+// 캐릭터 DOM 생성 함수
+function createCharDiv(card){
+  const charDiv = document.createElement("div");
+  charDiv.className = "char-card";
+  charDiv.draggable = true;
+
+   // 등급별 체력 설정
+  let hp = 0;
+  let range = 0; // 기본 사거리
+  let atkmult = 0; // 공격력 배율
+  switch(card.grade.toUpperCase()){
+    case "N":
+      hp = 5000;
+      range = 2;
+      atkmult =0.5;
+      break;
+    case "R":
+      hp = 7000;
+      range = 2; 
+      atkmult =0.5; 
+      break;
+    case "S":
+      hp = 10000;
+      range = 3;
+      atkmult =0.5;
+      break;
+    case "SR":
+      hp = 20000;
+      range = 5;
+      atkmult =0.65;
+      break;
+    case "SSR":
+      hp = 30000;
+      range = 10;
+      atkmult =0.5;
+      break;
+    case "UR":
+      hp = 50000;
+      range = 2;
+      atkmult =1.2;
+      break;
+    default:
+      hp = 80; // 알 수 없는 등급일 때 기본값
+  }
+  // 코스트 계산
+  const cost = COST_TABLE[card.grade.toUpperCase()] || 0;
+  // 데이터 세팅
+  charDiv.dataset.name  = card.name;
+  charDiv.dataset.grade = card.grade;
+  charDiv.dataset.hp    = hp;
+  charDiv.dataset.atk   = card.power*atkmult;
+  charDiv.dataset.img   = card.img;
+  charDiv.dataset.range = range;   // 기본 사거리 1로 설정 (필요에 따라 조정 가능)
+
+// 카드 HTML 구조
+  charDiv.innerHTML = `
+    <div class="char-header">
+      <span class="grade-badge">${card.grade}</span>
+      <span class="cost-display">★:${cost}</span>
+    </div>
+    <img src="${charDiv.dataset.img}" class="char-img" alt="${card.name}">
+    <div class="char-name">${card.name}</div>
+    <div class="char-power">
+      <i class="fa-solid fa-bolt"></i> ${card.power.toLocaleString('ko-KR')}
+    </div>
+  `;
+  // 드래그 이벤트 등록
+  charDiv.addEventListener("dragstart", e=>{
+    
+
+    const data = {
+      name: charDiv.dataset.name,
+      grade: charDiv.dataset.grade,   // 코스트 계산용 등급
+      hp: parseInt(charDiv.dataset.hp),
+      atk: parseInt(charDiv.dataset.atk),
+      range: parseInt(charDiv.dataset.range),
+      img: charDiv.dataset.img
+    };
+    charDiv.classList.add("dragging");
+    e.dataTransfer.setData("text", JSON.stringify(data));
+  });
+   // ✅ 드랍 성공 시 원본 제거
+  const draggedEl = document.querySelector(".dragging");
+  if(draggedEl) draggedEl.remove();
+
+  return charDiv;
+}
+
+const CONFIG = {
+    SHEET_ID:  '1qnYWGORCN_1DNb3qJzHexL4qu2JjGMgSC0JyHaFcY-8',
+    SHEET_NAME: '결과값',
+    MAX_DISPLAY_CARDS: 7,
+    FALLBACK_IMAGE: 'https://via.placeholder.com/150/1e293b/ffffff?text=No+Img' // 이미지 링크가 없을 때 보여줄 기본 이미지
+};
+
+
+// 구글 시트 데이터 Fetch 및 파싱 로직
+async function fetchSheetData() {
+    const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}`;
+
+    try {
+          const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP 오류: ${response.status}`);
+        }
+        const text = await response.text();
+        const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w]+)\);/)[1];
+        if (!match) {
+            throw new Error("구글 시트 응답 형식이 올바르지 않습니다.");
+        }
+        const data = JSON.parse(match);
+
+        // Optional Chaining (?.)과 Reduce를 활용해 데이터를 안전하고 빠르게 그룹화
+        const userMap = data.table.rows.reduce((acc, row) => {
+            const nickname = row?.c?.[0]?.v;
+            
+            // 유효하지 않은 행이거나 헤더인 경우 스킵
+            if (!nickname || nickname === '닉네임') return acc;
+
+            const grade = row?.c?.[2]?.v || 'N';
+            const cardName = row?.c?.[3]?.v || '알수없음';
+            const power = parseInt(row?.c?.[4]?.v) || 0;
+            // 구글 시트 6번째 열(F열, 인덱스 5)에서 실제 이미지 링크 가져오기
+            const imgUrl = row?.c?.[5]?.v || CONFIG.FALLBACK_IMAGE;
+
+            if (["A","B","C"].includes(grade.toUpperCase())) return acc;
+
+            if (!acc[nickname]) {
+                acc[nickname] = { nickname, totalPower: 0, cards: [] };
+            }
+
+            acc[nickname].cards.push({
+                name: cardName,
+                grade: grade,
+                power: power,
+                img: imgUrl // 실제 구글 시트의 이미지 링크 사용
+            });
+            acc[nickname].totalPower += power;
+
+            return acc;
+        }, {});
+
+        return Object.values(userMap);
+    } catch (error) {
+        console.error("구글 시트 연동 오류:", error);
+        return null; // 에러 발생 시 null 반환
+    }
+}
+
+
+ const COST_TABLE = {
+  "N":0,
+  "R":1,
+  "S":2,
+  "SR":3,
+  "SSR":4,
+  "UR":6
+};
+
+
+const PLAYER_COST_LIMIT = 8;
+const ENEMY_COST_LIMIT  = 8;
+
+function removeSpecificChar(uniqueId) {
+    // 모든 셀을 검사해서 해당 ID를 가진 놈만 지운다!
+    document.querySelectorAll(".cell").forEach(cell => {
+        if (cell.dataset.char) {
+            let charData = JSON.parse(cell.dataset.char);
+            if (charData.uniqueId === uniqueId) {
+                cell.innerHTML = ""; // 화면 지우기
+                delete cell.dataset.char; // 데이터 지우기
+            }
+        }
+    });
+}
+// 공격자 위치 계산용 헬퍼 (함수 밖에 선언하거나 상단에 두세요)
+function getGridPos(cell) {
+ const cells = Array.from(document.querySelectorAll("#battleGrid .cell"));
+    const index = cells.indexOf(cell);
+    return { x: index % 6, y: Math.floor(index / 6) };
+}
+
+function moveUnit(unit, fromCell, allUnitsOnBoard) {
+    const posA = getGridPos(fromCell);
+    let nearestTarget = null;
+    let minD = Infinity;
+
+    // 1. 타겟 찾기 (side가 다른 모든 유닛을 대상으로)
+    allUnitsOnBoard.filter(t => t.hp > 0 && t.side !== unit.side).forEach(t => {
+
+
+        // 모든 셀 중에서 해당 유닛을 가진 셀 찾기
+        const toCell = [...document.querySelectorAll("#battleGrid .cell")]
+            .find(c => c.dataset.char && JSON.parse(c.dataset.char).uniqueId === t.uniqueId);
+        
+        if (!toCell) return;
+        const posB = getGridPos(toCell);
+        const dist = Math.abs(posA.x - posB.x) + Math.abs(posA.y - posB.y);
+        if (dist < minD) { minD = dist; nearestTarget = toCell; }
+    });
+
+    if (nearestTarget) {
+        const posB = getGridPos(nearestTarget);
+        const nextPos = {
+            x: posA.x + Math.sign(posB.x - posA.x),
+            y: posA.y + Math.sign(posB.y - posA.y)
+        };
+        
+        // 2. 이동할 타겟 셀 찾기 (#battleGrid 내부에서)
+        const nextCell = [...document.querySelectorAll("#battleGrid .cell")]
+            .find(c => getGridPos(c).x === nextPos.x && getGridPos(c).y === nextPos.y);
+          // 3. 이동 수행
+      if (nextCell && !nextCell.dataset.char) { // 비어있는지 확인
+          const isUR = fromCell.classList.contains("UR-active");
+          // 1. 기존 데이터를 가져와서 객체로 변환
+          
+          let unitData = JSON.parse(fromCell.dataset.char);
+        
+          
+          
+          // 2. [핵심] 새로운 셀의 좌표를 계산해서 데이터에 덮어쓰기
+          const newPos = getGridPos(nextCell); // getGridPos 함수를 활용!
+          unitData.x = newPos.x;
+          unitData.y = newPos.y;
+          
+          // 3. 이제 수정된 데이터를 문자열로 변환하여 저장
+          nextCell.dataset.char = JSON.stringify(unitData);
+          nextCell.innerHTML = fromCell.innerHTML;
+         
+              // [중요] UR 클래스 이전 및 원본 삭제
+            if (isUR) {
+                fromCell.classList.remove("UR-active");
+                nextCell.classList.add("UR-active");
+            }
+          
+          
+          fromCell.innerHTML = "";
+          delete fromCell.dataset.char;
+          
+          console.log(`[이동] ${unit.name} -> (${nextCell.dataset.x}, ${nextCell.dataset.y}) | uniqueId: ${unit.uniqueId}`);
+          console.log(`[이동 성공] ${unitData.name} 이동 완료 -> (${unitData.x}, ${unitData.y})`);
+      } else {
+          console.log("[이동 실패] 다음 칸이 점유됨");
+      }
+    }
+}
+function findTargetsInRange(unit, allUnits) {
+    // 1. 공격자의 현재 좌표는 매개변수로 넘어온 unit 객체에서 바로 가져옵니다.
+    // allUnits에서 다시 find할 필요가 없습니다. (이미 데이터가 갱신되어 들어오기 때문)
+    const posA = { x: unit.x, y: unit.y };
+
+    // 2. 사거리 내 타겟 필터링
+    return allUnits.filter(target => {
+        // 본인과 같은 진영이거나, 이미 죽은(hp <= 0) 적은 제외
+        if (target.side === unit.side || target.hp <= 0) return false;
+        
+        // 맨해튼 거리 계산 (가로 차이 + 세로 차이)
+        const dist = Math.abs(posA.x - target.x) + Math.abs(posA.y - target.y);
+        
+        // 디버깅용 로그 (이름 확인 없이 모든 유닛에 대해 로그 출력 가능)
+        // console.log(`${unit.name}이 바라보는 ${target.name}과의 거리: ${dist} (사거리:${unit.range})`);
+        
+        return dist <= unit.range;
+    });
+}
+
+
+
+
+function startBattle() {
+if (isBattleRunning) return;
+
+
+const allCells = document.querySelectorAll("#battleGrid .cell");
+  const allUnits = Array.from(allCells)
+    .filter(c => c.dataset.char)
+    .map(c => JSON.parse(c.dataset.char));
+
+if (isRoundCleared()) {
+        log(`스테이지 ${currentRound}  적이 몰려옵니다...`);
+        prepareRound(currentRound);
+    }
+
+    isBattleRunning = true;
+
+
+  // 2. side 속성을 기준으로 명확하게 분리
+  let players = allUnits.filter(u => u.side === 'player');
+  let enemies = allUnits.filter(u => u.side === 'enemy');
+
+
+
+  log("=== 전투 시작 ===");
+
+  let round=1;
+  const interval=setInterval(()=>{
+    let moveQueue = [];
+    // 0. 최신 필드 데이터 전부 가져오기 (매 라운드마다 갱신!)
+    const allUnits = Array.from(document.querySelectorAll("#battleGrid .cell"))
+        .filter(c => c.dataset.char)
+        .map(c => JSON.parse(c.dataset.char));
+
+    let players = allUnits.filter(u => u.side === 'player');
+    let enemies = allUnits.filter(u => u.side === 'enemy');
+
+    
+
+    log(`-- 라운드 ${round} --`);
+
+players.filter(p => p.hp > 0).forEach(p => {
+    // 1. [핵심] 루프마다 DOM에서 최신 데이터를 다시 가져옴 (좌표/HP 최신화)
+    const currentCell = document.querySelector(`[data-char*='"uniqueId":"${p.uniqueId}"']`);
+    if (!currentCell) return;
+    
+    // 이 시점에서 p를 최신 데이터로 덮어씀
+    const pCurrent = JSON.parse(currentCell.dataset.char);
+    
+    // 2. 최신 좌표를 기준으로 타겟 찾기
+    const targets = findTargetsInRange(pCurrent, allUnits);
+    
+    console.log(`${pCurrent.name} 위치:(${pCurrent.x},${pCurrent.y}) / 타겟 수: ${targets.length}`);
+
+    if (targets.length > 0) {
+        const target = targets[0];
+        
+        // 3. HP 깎기 (데이터 객체 직접 수정)
+        target.hp -= pCurrent.atk;
+        if (target.hp < 0) target.hp = 0;
+        
+        // 4. 타겟 셀을 찾아 최신 데이터 저장 및 UI 업데이트
+        const targetCell = document.querySelector(`[data-char*='"uniqueId":"${target.uniqueId}"']`);
+        if (targetCell) {
+            // [중요] 수정된 target 데이터를 DOM에 다시 박제
+            targetCell.dataset.char = JSON.stringify(target);
+            
+            // 체력바 UI 업데이트
+            const hpbar = targetCell.querySelector(".hpfill");
+            if (hpbar) {
+                const percent = (target.hp / target.maxHp) * 100;
+                hpbar.style.width = Math.max(0, percent) + "%";
+            }
+
+            // 사망 처리
+            if (target.hp <= 0) {
+                targetCell.innerHTML = "";
+                targetCell.classList.remove("UR-active"); // 오로라 삭제!
+                delete targetCell.dataset.char;
+
+                            // 등급에 따른 점수 획득
+                const points =  currentRound * 100;
+                addScore(points);
+
+
+                updateCostDisplay();
+                log(`${target.name}이(가) 쓰러졌습니다!`);
+            }
+        }
+        
+        log(`${pCurrent.name} → ${target.name} 공격! (HP:${target.hp})`);
+        if (currentCell && targetCell) shootProjectile(currentCell, targetCell, pCurrent.grade);
+        
+    } else {
+        // 이동 시에도 최신 데이터(pCurrent)를 넘겨줌
+       moveQueue.push({ unit: pCurrent, cell: currentCell });
+    }
+});
+
+enemies.filter(e => e.hp > 0).forEach(e => {
+    // 1. [핵심] 루프마다 DOM에서 최신 데이터를 다시 가져옴 (좌표/HP 최신화)
+    const fromCell = document.querySelector(`[data-char*='"uniqueId":"${e.uniqueId}"']`);
+    if (!fromCell) return;
+
+    // 현재 셀의 최신 데이터로 업데이트
+    const eCurrent = JSON.parse(fromCell.dataset.char);
+    
+    // 2. 최신 데이터(eCurrent)를 사용하여 타겟 찾기
+    const targets = findTargetsInRange(eCurrent, allUnits);
+    
+    console.log(`${eCurrent.name} 위치:(${eCurrent.x},${eCurrent.y}) / 타겟 수: ${targets.length}`);
+    if (targets.length === 0) {
+        console.log(`${eCurrent.name} 근처에 적이 없습니다. 사거리:${eCurrent.range}`);
+    }
+
+    // 3. 공격 실행
+    if (targets.length > 0) {
+        const target = targets[0];
+        
+        // 데이터 수정
+        target.hp -= eCurrent.atk;
+        if (target.hp < 0) target.hp = 0;
+        
+        const targetCell = document.querySelector(`[data-char*='"uniqueId":"${target.uniqueId}"']`);
+        if (targetCell) {
+            // [중요] 최신 데이터를 DOM에 반영
+            targetCell.dataset.char = JSON.stringify(target);
+            
+            // 체력바 업데이트
+            const hpbar = targetCell.querySelector(".hpfill");
+            if (hpbar) {
+                const percent = (target.hp / target.maxHp) * 100;
+                hpbar.style.width = Math.max(0, percent) + "%";
+            }
+
+            // 사망 처리
+            if (target.hp <= 0) {
+                targetCell.innerHTML = "";
+                targetCell.classList.remove("UR-active"); // 오로라 삭제!
+                delete targetCell.dataset.char;
+
+                updateCostDisplay();
+                log(`${target.name}이(가) 쓰러졌습니다!`);
+            }
+        }
+        
+        log(`${eCurrent.name} → ${target.name} 공격! (HP:${target.hp})`);
+        if (fromCell && targetCell) shootProjectile(fromCell, targetCell, eCurrent.grade);
+        
+    } else {
+        // 4. 공격 대상 없으면 이동 (최신 데이터 eCurrent 사용)
+        moveQueue.push({ unit: eCurrent, cell: fromCell });
+    }
+});
+
+// 5. 이제 모아둔 moveQueue를 순회하며 이동 실행!
+    moveQueue.forEach(item => {
+        moveUnit(item.unit, item.cell, allUnits);
+    });
+// 2. 라운드 클리어 체크
+    if (isRoundCleared()) {
+        log(`스테이지  ${currentRound} 클리어!`);
+
+
+        
+        // [핵심] 여기서 인터벌을 바로 멈춤!
+        clearInterval(interval); 
+        isBattleRunning = false;
+
+              if (isRounddefeat()) {
+              // 1. 남은 카드가 있는지 확인 (0개면 진짜 게임 오버)
+              const remainingCards = document.querySelectorAll("#playerChars .char-card").length;
+
+              if (remainingCards === 0) {
+              log("❌ 카드가 없고 아군이 전멸했습니다. 게임 오버!");
+              clearInterval(interval);
+              isBattleRunning = false;
+              gameOver(); // 최종 패배 함수 호출
+              return;}}
+    
+
+
+        
+        // 3. 다음 라운드 준비
+        currentRound++;
+        log(`전투가 멈췄습니다. 다시 '전투 시작'을 누르면 라운드 ${currentRound}가 시작됩니다.`);
+        
+        return; // 루프의 나머지 코드를 더 이상 실행하지 않고 즉시 종료
+    }
+
+  else if (isRounddefeat()) {
+    // 1. 남은 카드가 있는지 확인 (0개면 진짜 게임 오버)
+    const remainingCards = document.querySelectorAll("#playerChars .char-card").length;
+
+    if (remainingCards === 0) {
+        log("❌ 카드가 없고 아군이 전멸했습니다. 게임 오버!");
+        clearInterval(interval);
+        isBattleRunning = false;
+        gameOver(); // 최종 패배 함수 호출
+        return;
+    } else {
+        // 2. 카드가 남아있다면 기존처럼 라운드 패배 처리
+        log(`스테이지 ${currentRound} 패배! 남은 카드로 재정비하세요.`);
+        clearInterval(interval);
+        isBattleRunning = false;
+        currentRound++; // 혹은 필요에 따라 라운드 증가를 제어하세요
+        log(`전투가 멈췄습니다. 카드를 배치하고 다시 '전투 시작'을 누르세요.`);
+        return;
+    }
+}
+
+
+
+
+    round++;
+  }
+  
+  
+  ,1000);
+
+
+
+}
+
+
+
+</script>
+</body>
+</html>
