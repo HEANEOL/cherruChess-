@@ -491,42 +491,84 @@ input {
 
 @media (max-width: 768px) {
 
-        /* 1. 상단 바 높이 줄이기 */
-        .top-controls {
-            flex-direction: row !important;
-      
-            justify-content: center !important;
-            padding: 5px 2px !important;
-            height: auto !important;
-        }
-        .controls-right {
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 5px;
-        }
-        .game-title {
-            font-size: 1.2rem !important;
-            margin: 0 10px 0 0 !important;
-        }
-        button, input {
-            font-size: 0.8rem !important;
-            padding: 4px 8px !important;
-        }
+     /* 1. 상단바 전체 구조를 '세로 정렬'로 변경하여 가로 폭 100% 확보 */
+    .top-controls {
+        flex-direction: column !important; 
+        align-items: center !important;
+        gap: 4px !important;          /* 줄 간격 최소화 */
+        padding: 6px 4px !important;  /* 위아래 패딩 축소 */
+        height: auto !important;
+    }
 
-        /* 2. 메인 컨테이너 조절 */
-        .container {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important; 
-            justify-content: center !important;
-            gap: 20px !important;
-            width: 100% !important; /* 100%로 꽉 채워야 중앙 정렬이 잘 보입니다 */
-            padding: 10px;
-            margin-top: 120px;
-            box-sizing: border-box !important;
-        }
+    /* 타이틀을 맨 위 중앙에 아담하게 배치 */
+    .game-title {
+        font-size: 1rem !important;   /* 글자 크기 축소 */
+        text-align: center !important;
+        margin: 0 0 2px 0 !important;
+        flex: none !important;        /* PC 레이아웃의 공간 독점 해제 */
+    }
+
+    /* 버튼 박스가 가로폭을 100% 다 쓰게 만들어 내부 요소들이 옆으로 흐르게 조절 */
+    .controls-right {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;   /* 공간이 부족하면 자연스럽게 줄바꿈 */
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 4px !important;          /* 요소들끼리 촘촘하게 밀착 */
+        width: 100% !important;
+        flex: none !important;
+        font-size: 0.75rem !important; /* 기본 텍스트 크기 축소 */
+    }
+
+    /* 2. 이름 입력창, 버튼, 슬라이더 크기 대폭 축소 */
+    input {
+        width: 80px !important;       /* 이름 입력창 가로폭 슬림하게 */
+        padding: 2px 4px !important;
+        font-size: 0.75rem !important;
+        height: 22px !important;
+    }
+
+    button {
+        padding: 2px 6px !important;
+        font-size: 0.75rem !important;
+        height: 22px !important;
+        line-height: 1 !important;
+    }
+
+    #toggleMusic {
+        padding: 2px 6px !important;
+        font-size: 0.75rem !important;
+        height: 22px !important;
+        margin: 0 !important;
+        border-radius: 4px !important; /* 뚱뚱한 타원형 패딩 축소 */
+    }
+
+    #volumeSlider {
+        width: 50px !important;       /* 볼륨 조절 바 크기 반토막 */
+        height: 12px !important;
+        margin: 0 !important;
+        vertical-align: middle;
+    }
+
+    /* 스크린샷에서 혼자 엄청 크던 핫핑크색 '점수' 텍스트 크기 강제 축소 */
+    .controls-right div, .controls-right span, .controls-right p {
+        font-size: 0.85rem !important;
+        margin: 2px 0 !important;
+    }
+
+    /* 3. 상단바가 슬림해졌으니 본문 컨테이너가 너무 내려가지 않도록 여백 밀착 */
+    .container {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important; 
+        justify-content: center !important;
+        gap: 20px !important;
+        width: 100% !important;
+        padding: 10px;
+        margin-top: 80px !important;   /* 기존 100px에서 80px로 축소 */
+        box-sizing: border-box !important;
+    }
 
         /* 3. 사이드 패널 덩어리 가로 중앙 배치 */
         .side-panels {
@@ -574,8 +616,8 @@ input {
             margin: 0 auto !important; 
             justify-content: center; 
             width: 100% !important;
-            max-width: 340px !important; /* 그리드가 스마트폰 화면보다 커지지 않게 제한 */
-            min-width: 0 !important;      
+            max-width: 300px !important; /* 그리드가 스마트폰 화면보다 커지지 않게 제한 */
+            min-width: 280 !important;      
         }
     }
 
