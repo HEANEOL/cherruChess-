@@ -491,135 +491,126 @@ input {
 
 @media (max-width: 768px) {
 
-     /* 1. 상단바 전체 구조를 '세로 정렬'로 변경하여 가로 폭 100% 확보 */
+    /* 1. 상단 바 높이 및 요소 조절 (유지) */
     .top-controls {
         flex-direction: column !important; 
         align-items: center !important;
-        gap: 4px !important;          /* 줄 간격 최소화 */
-        padding: 6px 4px !important;  /* 위아래 패딩 축소 */
+        gap: 4px !important;
+        padding: 6px 4px !important;
         height: auto !important;
     }
-
-    /* 타이틀을 맨 위 중앙에 아담하게 배치 */
     .game-title {
-        font-size: 1rem !important;   /* 글자 크기 축소 */
+        font-size: 1rem !important;
         text-align: center !important;
         margin: 0 0 2px 0 !important;
-        flex: none !important;        /* PC 레이아웃의 공간 독점 해제 */
+        flex: none !important;
     }
-
-    /* 버튼 박스가 가로폭을 100% 다 쓰게 만들어 내부 요소들이 옆으로 흐르게 조절 */
     .controls-right {
         display: flex !important;
         flex-direction: row !important;
-        flex-wrap: wrap !important;   /* 공간이 부족하면 자연스럽게 줄바꿈 */
+        flex-wrap: wrap !important;
         justify-content: center !important;
         align-items: center !important;
-        gap: 4px !important;          /* 요소들끼리 촘촘하게 밀착 */
+        gap: 4px !important;
         width: 100% !important;
         flex: none !important;
-        font-size: 0.75rem !important; /* 기본 텍스트 크기 축소 */
     }
-
-    /* 2. 이름 입력창, 버튼, 슬라이더 크기 대폭 축소 */
     input {
-        width: 80px !important;       /* 이름 입력창 가로폭 슬림하게 */
+        width: 80px !important;
         padding: 2px 4px !important;
         font-size: 0.75rem !important;
         height: 22px !important;
     }
-
     button {
         padding: 2px 6px !important;
         font-size: 0.75rem !important;
         height: 22px !important;
         line-height: 1 !important;
     }
-
     #toggleMusic {
         padding: 2px 6px !important;
         font-size: 0.75rem !important;
         height: 22px !important;
         margin: 0 !important;
-        border-radius: 4px !important; /* 뚱뚱한 타원형 패딩 축소 */
+        border-radius: 4px !important;
     }
-
     #volumeSlider {
-        width: 50px !important;       /* 볼륨 조절 바 크기 반토막 */
+        width: 50px !important;
         height: 12px !important;
         margin: 0 !important;
         vertical-align: middle;
     }
-
-    /* 스크린샷에서 혼자 엄청 크던 핫핑크색 '점수' 텍스트 크기 강제 축소 */
     .controls-right div, .controls-right span, .controls-right p {
         font-size: 0.85rem !important;
         margin: 2px 0 !important;
     }
 
-    /* 3. 상단바가 슬림해졌으니 본문 컨테이너가 너무 내려가지 않도록 여백 밀착 */
+    /* 2. 메인 컨테이너 간격 축소 */
     .container {
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important; 
         justify-content: center !important;
-        gap: 20px !important;
+        gap: 8px !important;          /* 💡 간격을 20px -> 8px로 대폭 줄여서 위로 밀착! */
         width: 100% !important;
         padding: 10px;
-        margin-top: 80px !important;   /* 기존 100px에서 80px로 축소 */
+        margin-top: 75px !important;   /* 상단바 바로 밑에 붙도록 조절 */
         box-sizing: border-box !important;
     }
 
-        /* 3. 사이드 패널 덩어리 가로 중앙 배치 */
-        .side-panels {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important; 
-            width: 100% !important;
-            margin: 0 auto !important;
-        }
-
-        /* 4. 로그창/선택창 박스 정렬 - 오로지 박스 덩어리만 중앙 정렬 */
-        .log-panel, .select-panel {
-            min-width: 0 !important;      /* 💡 비어있던 오타를 '0'으로 확실히 해제! */
-            width: 80% !important;        /* 화면 폭의 90% 크기로 딱 맞춤 */
-            margin: 10px auto !important; /* 좌우 마진 auto로 완벽한 중앙 정렬 */
-            display: block !important;    /* 내부 텍스트는 원래대로 왼쪽 정렬 */
-            box-sizing: border-box !important;
-        }
-
-        /* 5. 전투 필드 패널 조절 */
-        .field-panel {
-            width: 100% !important;
-            margin: 0 auto !important;
-            box-sizing: border-box !important;
-            display: flex !important;
-            justify-content: center !important;
-        }
-
-        .log-panel {
-            max-height: 80px !important;
-        }
-        #battleLog {
-            height: 60px !important;
-            font-size: 0.9rem;
-        }
-
-        /* 6. 배틀 그리드 - 화면 밖으로 터지는 현상 방지 */
-        .battleGrid {
-            /* 모바일 화면 폭에 맞게 셀 크기를 48px로 스마트하게 축소 */
-            grid-template-columns: repeat(6, minmax(45px, 1fr)) !important;
-            grid-template-rows: repeat(6, minmax(45px, 1fr)) !important; 
-            height: auto !important; /* 고정 높이 해제 */
-            
-            display: grid;
-            margin: 0 auto !important; 
-            justify-content: center; 
-            width: 100% !important;
-            max-width: 300px !important; /* 그리드가 스마트폰 화면보다 커지지 않게 제한 */
-            min-width: 280 !important;      
-        }
+    /* 3. 🚨 [핵심] 오른쪽 쏠림 방지: 배틀필드 감싸는 부모 박스 초기화 */
+    .left-panel, .field-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;       /* PC의 600px 족쇄를 완전히 파괴 */
+        margin: 0 auto !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important; /* 내부에 있는 배틀 그리드를 화면 정중앙으로! */
+        justify-content: center !important;
     }
+
+    /* 4. 배틀 그리드 중앙 정렬 및 크기 고정 */
+    .battleGrid {
+        grid-template-columns: repeat(6, minmax(45px, 1fr)) !important;
+        grid-template-rows: repeat(6, minmax(45px, 1fr)) !important; 
+        height: auto !important;
+        display: grid;
+        margin: 0 auto !important; 
+        justify-content: center; 
+        width: 100% !important;
+        max-width: 340px !important; 
+        min-width: 0 !important;      
+    }
+
+    /* 5. 사이드 패널(로그 + 선택창) 간격 밀착 */
+    .side-panels {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important; 
+        width: 100% !important;
+        margin: 0 auto !important;
+        gap: 8px !important;          /* 💡 로그창과 선택창 사이의 틈새도 8px로 좁힘 */
+    }
+
+    /* 6. 로그창/선택창 박스 마진 제거 */
+    .log-panel, .select-panel {
+        min-width: 0 !important;      
+        width: 92% !important;        /* 좌우 여백을 살짝 더 넓혀서 이쁘게 조절 */
+        margin: 0 auto !important;    /* 💡 위아래 쓸데없는 마진을 0으로 지워서 갭 밀착 */
+        display: block !important;    
+        box-sizing: border-box !important;
+    }
+
+    .log-panel {
+        max-height: 80px !important;
+    }
+    #battleLog {
+        height: 60px !important;
+        font-size: 0.9rem;
+    }
+}
 
   </style>
 </head>
