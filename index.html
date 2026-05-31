@@ -521,19 +521,26 @@ input {
     }
     /* 컨테이너의 방향을 세로로 변경 */
     .container {
-        flex-direction: column !important; 
+       display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important; /* 가로 중앙 정렬 핵심! */
+        justify-content: center !important;
         gap: 20px !important;
+        width: 100% !important;
         padding: 10px;
         margin-top: 100px;
     }
 
     /* 전투 필드와 사이드 패널의 너비를 100%로 확장 */
     .field-panel, .side-panels {
-       width: calc(100% - 45px) !important;
+       width: calc(100% - 30px) !important;
         
         /* 중앙 정렬 */
         margin: 0 auto !important;
         box-sizing: border-box;    /* 패딩 때문에 95%가 화면 밖으로 나가는 것 방지 */
+        display: flex;
+
+      
     }
 
   .log-panel {
