@@ -482,6 +482,12 @@ input {
 }
 
 
+    #volumeSlider {
+    vertical-align: middle;
+    cursor: pointer;
+    width: 100px; /* 폭 조절 */
+}
+
   </style>
 </head>
 <body>
@@ -495,6 +501,8 @@ input {
         <button id="loadCharsBtn">캐릭터 불러오기</button>
         <button onclick="startBattle()">전투 시작!</button>
         <button id="toggleMusic">음악 ON 🎵</button>
+      <label for="volumeSlider">볼륨:</label>
+    <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="0.3">
         <span id="scoreDisplay" style="margin-left: 20px; font-weight: 900; color: #ff0080; font-size: 20px;">점수: 0</span>
     </div>
 
@@ -569,6 +577,17 @@ document.getElementById("toggleMusic").addEventListener("click", function() {
         btn.classList.add("off");
     }
 });
+
+  const volumeSlider = document.getElementById("volumeSlider");
+const bgm = document.getElementById("bgm");
+
+// 슬라이더 값이 변할 때마다 볼륨 조절
+volumeSlider.addEventListener("input", function() {
+    bgm.volume = this.value;
+});
+
+// 시작할 때 기본 볼륨 적용
+bgm.volume = volumeSlider.value;
 
 
 
