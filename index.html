@@ -541,7 +541,7 @@ input {
 
     /* 2. 로그창/선택창 박스들의 정렬 */
     .log-panel, .select-panel {
-        min-width: 400px !important;      /* 💡 수정: 500px 고정을 0으로 해제! */
+        min-width:  !important;      /* 💡 수정: 500px 고정을 0으로 해제! */
         width: 85% !important;        /* 화면보다 10% 작게 설정하여 여백 확보 */
         margin: 10px auto !important; /* 좌우 마진을 auto로 주어 중앙 정렬 */
         display: block !important;    /* 내부 텍스트는 다시 왼쪽 정렬 가능 */
@@ -570,8 +570,8 @@ input {
     }
 
    .battleGrid {
-        /* 셀의 최소 크기를 60px 정도로 보장 */
-        grid-template-columns: repeat(6, minmax(55px, 1fr)) !important;
+        /* 셀의 최소 크기를 50px 정도로 보장 */
+        grid-template-columns: repeat(6, minmax(50px, 1fr)) !important;
         
          display: grid;
         margin: 0 auto; /* 좌우 마진 자동(중앙 정렬) */
