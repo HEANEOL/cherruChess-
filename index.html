@@ -488,6 +488,27 @@ input {
     width: 100px; /* 폭 조절 */
 }
 
+    /* 기존 CSS 아래에 추가하세요 */
+@media (max-width: 768px) {
+    /* 컨테이너의 방향을 세로로 변경 */
+    .container {
+        flex-direction: column !important; 
+        gap: 20px !important;
+        padding: 10px;
+    }
+
+    /* 전투 필드와 사이드 패널의 너비를 100%로 확장 */
+    .field-panel, .side-panels {
+        width: 100% !important;
+    }
+
+    /* 모바일에서는 전투 필드가 너무 크면 레이아웃이 깨지므로 조절 */
+    .battleGrid {
+        width: 100%;
+        /* 필요하다면 여기서 그리드 크기를 조금 줄일 수 있습니다 */
+    }
+}
+
   </style>
 </head>
 <body>
