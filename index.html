@@ -493,16 +493,31 @@ input {
 
   /* 1. 상단 바 높이 줄이기 (모바일은 공간이 좁으니까요) */
     .top-controls {
-        height: auto;
-        padding: 5px;
-        white-space: nowrap;
+        flex-direction: row !important; /* 가로 배치 강제 */
+        flex-wrap: wrap !important;     /* 화면이 좁으면 줄바꿈 허용 */
+        justify-content: center !important;
+        padding: 5px 2px !important;    /* 여백 최소화 */
+        height: auto !important;
+    }
+/* 상단바 내부 요소들의 마진과 크기 조절 */
+    .controls-right {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px; /* 버튼 간격 */
     }
 
-    /* 2. 컨트롤 버튼들 한 줄에 너무 길게 나가지 않게 조절 */
-    .controls-right {
-        flex-wrap: wrap;
-        gap: 5px;
-        justify-content: center;
+    /* 제목 글자 크기 축소 */
+    .game-title {
+        font-size: 1.2rem !important;
+        margin: 0 10px 0 0 !important;
+    }
+
+    /* 버튼 글자 크기 축소 */
+    button, input {
+        font-size: 0.8rem !important;
+        padding: 4px 8px !important;
     }
     /* 컨테이너의 방향을 세로로 변경 */
     .container {
@@ -514,8 +529,10 @@ input {
 
     /* 전투 필드와 사이드 패널의 너비를 100%로 확장 */
     .field-panel, .side-panels {
-       width: 95% !important;
-        margin: 0 auto !important; /* 이 코드가 좌우 여백을 똑같이 나누어 중앙으로 보냅니다 */
+       width: calc(100% - 25px) !important;
+        
+        /* 중앙 정렬 */
+        margin: 0 auto !important;
         box-sizing: border-box;    /* 패딩 때문에 95%가 화면 밖으로 나가는 것 방지 */
     }
 
