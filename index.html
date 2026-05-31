@@ -487,72 +487,126 @@ input {
     vertical-align: middle;
     cursor: pointer;
     width: 100px; /* 폭 조절 */
-}
-@media (max-width: 768px) {
-    /* 1. 메인 컨테이너 - 자식 요소들을 무조건 가로 중앙 정렬 */
+}@media (max-width: 768px) {
+
+    /* 1. 상단 바 높이 및 요소 조절 (유지) */
+    .top-controls {
+        flex-direction: column !important; 
+        align-items: center !important;
+        gap: 4px !important;
+        padding: 6px 4px !important;
+        height: auto !important;
+    }
+    .game-title {
+        font-size: 1rem !important;
+        text-align: center !important;
+        margin: 0 0 2px 0 !important;
+        flex: none !important;
+    }
+    .controls-right {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 4px !important;
+        width: 100% !important;
+        flex: none !important;
+    }
+    input {
+        width: 80px !important;
+        padding: 2px 4px !important;
+        font-size: 0.75rem !important;
+        height: 22px !important;
+    }
+    button {
+        padding: 2px 6px !important;
+        font-size: 0.75rem !important;
+        height: 22px !important;
+        line-height: 1 !important;
+    }
+    #toggleMusic {
+        padding: 2px 6px !important;
+        font-size: 0.75rem !important;
+        height: 22px !important;
+        margin: 0 !important;
+        border-radius: 4px !important;
+    }
+    #volumeSlider {
+        width: 50px !important;
+        height: 12px !important;
+        margin: 0 !important;
+        vertical-align: middle;
+    }
+    .controls-right div, .controls-right span, .controls-right p {
+        font-size: 0.85rem !important;
+        margin: 2px 0 !important;
+    }
+
+    /* 2. 메인 컨테이너 간격 축소 */
     .container {
         display: flex !important;
         flex-direction: column !important;
-        align-items: center !important;  /* 가로 정중앙 배치 핵심 */
-        gap: 0px !important;            /* 요소 간 기본 간격을 0으로 제거 */
+        align-items: center !important; 
+        justify-content: center !important;
+        gap: 8px !important;          /* 💡 간격을 20px -> 8px로 대폭 줄여서 위로 밀착! */
         width: 100% !important;
-        padding: 5px !important;
-        margin-top: 70px !important;    /* 상단바와의 간격 */
+        padding: 10px;
+        margin-top: 75px !important;   /* 상단바 바로 밑에 붙도록 조절 */
         box-sizing: border-box !important;
-        overflow-x: hidden !important;  /* 가로 스크롤 방지 */
     }
 
-    /* 2. 전투 필드 부모 패널 - 쏠림 방지를 위해 너비 초기화 및 중앙 정렬 */
+    /* 3. 🚨 [핵심] 오른쪽 쏠림 방지: 배틀필드 감싸는 부모 박스 초기화 */
     .left-panel, .field-panel {
         width: 100% !important;
         max-width: 100% !important;
-        min-width: 0 !important;
+        min-width: 0 !important;       /* PC의 600px 족쇄를 완전히 파괴 */
         margin: 0 auto !important;
-        padding: 0 !important;
+        box-sizing: border-box !important;
         display: flex !important;
         flex-direction: column !important;
-        align-items: center !important; /* 내부 그리드를 중앙으로 */
-    }
-
-    /* 3. 배틀 그리드 - 여백 없이 중앙 고정 */
-    .battleGrid {
-        display: grid !important;
-        margin: 5px auto !important;   /* 위아래 약간의 여백만 남기고 중앙 배치 */
-        margin-right: 25px !important; 
+        align-items: center !important; /* 내부에 있는 배틀 그리드를 화면 정중앙으로! */
         justify-content: center !important;
-        width: 95% !important;         /* 화면 폭에 맞게 자동 조절 */
-        max-width: 350px !important;   /* 너무 커지지 않게 제한 */
-        grid-template-columns: repeat(6, 1fr) !important;
-        gap: 2px !important;           /* 셀 간격 좁힘 */
     }
 
-    /* 4. 사이드 패널(로그/선택창) - 필드 바로 밑으로 밀착 */
+    /* 4. 배틀 그리드 중앙 정렬 및 크기 고정 */
+    .battleGrid {
+        grid-template-columns: repeat(6, minmax(45px, 1fr)) !important;
+        grid-template-rows: repeat(6, minmax(45px, 1fr)) !important; 
+        height: auto !important;
+        display: grid;
+        margin: 0 auto !important; 
+        justify-content: center; 
+        width: 90% !important;
+        min-width: 340!important;      
+    }
+
+    /* 5. 사이드 패널(로그 + 선택창) 간격 밀착 */
     .side-panels {
         display: flex !important;
         flex-direction: column !important;
-        align-items: center !important;
+        align-items: center !important; 
         width: 100% !important;
-        margin: 0 !important;          /* 위쪽 마진 제거 */
-        gap: 5px !important;           /* 로그와 선택창 사이만 5px 간격 */
+        margin: 0 auto !important;
+        gap: 8px !important;          /* 💡 로그창과 선택창 사이의 틈새도 8px로 좁힘 */
     }
 
-    /* 5. 로그창 및 선택창 박스 다이어트 */
+    /* 6. 로그창/선택창 박스 마진 제거 */
     .log-panel, .select-panel {
-        width: 95% !important;
-        min-width: 0 !important;
-        margin: 0 auto !important;     /* 자동 중앙 정렬 */
-        padding: 8px !important;
+        min-width: 0 !important;      
+        width: 92% !important;        /* 좌우 여백을 살짝 더 넓혀서 이쁘게 조절 */
+        margin: 0 auto !important;    /* 💡 위아래 쓸데없는 마진을 0으로 지워서 갭 밀착 */
+        display: block !important;    
         box-sizing: border-box !important;
     }
 
-    /* 전투 로그 내부 높이 조절 */
+    .log-panel {
+        max-height: 80px !important;
+    }
     #battleLog {
         height: 60px !important;
-        font-size: 0.85rem !important;
+        font-size: 0.9rem;
     }
-
-    /* 나머지 상단바 슬림 코드는 유지 */
-    .top-controls { padding: 4px !important; }
 }
   </style>
 </head>
