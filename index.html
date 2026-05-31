@@ -530,9 +530,28 @@ input {
         padding: 10px;
         margin-top: 100px;
     }
+  .side-panels {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important; /* 가로 중앙 정렬 핵심 */
+        width: 100% !important;
+        margin: 0 auto !important;
+    }
+
+    /* 로그와 선택창 박스 자체를 중앙으로 배치 */
+    .log-panel, .select-panel {
+        width: 90% !important;        /* 100% 대신 90%로 살짝 줄여야 중앙에 쏙 들어옵니다 */
+        margin: 0 auto !important;
+        display: flex;
+        flex-direction: column;
+      /* 💡 핵심: 박스 안의 내용은 왼쪽 정렬로 복귀 */
+        text-align: left !important;
+        align-items: flex-start !important;        /* 박스 안의 내용물도 중앙으로 */
+        text-align: center;
+    }
 
     /* 전투 필드와 사이드 패널의 너비를 100%로 확장 */
-    .field-panel, .side-panels {
+    .field-panel {
        width: calc(100% - 30px) !important;
         
         /* 중앙 정렬 */
