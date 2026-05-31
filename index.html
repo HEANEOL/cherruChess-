@@ -571,8 +571,8 @@ input {
 
     /* 4. 배틀 그리드 중앙 정렬 및 크기 고정 */
     .battleGrid {
-        grid-template-columns: repeat(6, minmax(45px, 1fr)) !important;
-        grid-template-rows: repeat(6, minmax(45px, 1fr)) !important; 
+        grid-template-columns: repeat(6, minmax(40px, 1fr)) !important;
+        grid-template-rows: repeat(6, minmax(40px, 1fr)) !important; 
         height: auto !important;
         display: grid;
         margin: 0 auto !important; 
@@ -588,7 +588,7 @@ input {
         align-items: center !important; 
         width: 100% !important;
         margin: 0 auto !important;
-        gap: 8px !important;          /* 💡 로그창과 선택창 사이의 틈새도 8px로 좁힘 */
+        gap: 4px !important;          /* 💡 로그창과 선택창 사이의 틈새도 8px로 좁힘 */
     }
 
     /* 6. 로그창/선택창 박스 마진 제거 */
@@ -601,10 +601,10 @@ input {
     }
 
     .log-panel {
-        max-height: 80px !important;
+        max-height: 60px !important;
     }
     #battleLog {
-        height: 60px !important;
+        height: 40px !important;
         font-size: 0.9rem;
     }
 }
