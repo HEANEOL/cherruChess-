@@ -541,6 +541,7 @@ input {
 
     /* 2. 로그창/선택창 박스들의 정렬 */
     .log-panel, .select-panel {
+        min-width: 0 !important;      /* 💡 수정: 500px 고정을 0으로 해제! */
         width: 90% !important;        /* 화면보다 10% 작게 설정하여 여백 확보 */
         margin: 10px auto !important; /* 좌우 마진을 auto로 주어 중앙 정렬 */
         display: block !important;    /* 내부 텍스트는 다시 왼쪽 정렬 가능 */
