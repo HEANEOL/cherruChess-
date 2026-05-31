@@ -490,6 +490,19 @@ input {
 
     /* 기존 CSS 아래에 추가하세요 */
 @media (max-width: 768px) {
+
+  /* 1. 상단 바 높이 줄이기 (모바일은 공간이 좁으니까요) */
+    .top-controls {
+        height: auto;
+        padding: 5px;
+    }
+
+    /* 2. 컨트롤 버튼들 한 줄에 너무 길게 나가지 않게 조절 */
+    .controls-right {
+        flex-wrap: wrap;
+        gap: 5px;
+        justify-content: center;
+    }
     /* 컨테이너의 방향을 세로로 변경 */
     .container {
         flex-direction: column !important; 
@@ -502,10 +515,24 @@ input {
         width: 100% !important;
     }
 
-    /* 모바일에서는 전투 필드가 너무 크면 레이아웃이 깨지므로 조절 */
-    .battleGrid {
-        width: 100%;
-        /* 필요하다면 여기서 그리드 크기를 조금 줄일 수 있습니다 */
+  .log-panel {
+        max-height: 80px !important; /* 높이를 확 줄임 */
+    }
+
+    #battleLog {
+        height: 60px !important;    /* 실제 로그 내용 영역도 줄임 */
+        font-size: 0.9rem;          /* 글자 크기를 살짝 줄여서 한 줄에 내용이 많이 보이게 함 */
+    }
+
+   .battleGrid {
+        /* 셀의 최소 크기를 40px 정도로 보장 */
+        grid-template-columns: repeat(6, minmax(40px, 1fr)) !important;
+        
+        /* 전체 폭이 너무 작아지면 가로 스크롤이 생기도록 설정 */
+        overflow-x: auto; 
+        
+        /* 쪼그라드는 힘을 무시하고 최소 너비 유지 */
+        min-width: 300px; 
     }
 }
 
