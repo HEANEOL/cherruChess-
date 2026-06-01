@@ -713,6 +713,107 @@ volumeSlider.addEventListener("input", function() {
 bgm.volume = volumeSlider.value;
 
 
+let playerBadges = []; // 현재 장착한 배지 저장소 (최대 3개)
+const MAX_BADGE_SLOTS = 3;
+
+// 10종의 배지 데이터 베이스 (등급별 확률 가중치 반영용)
+const badgePool = [
+    { id: 1, name: "체력 회복", type: "hp", value: 5000, grade: "Common", color: "#94a3b8", desc: "모든 아군 체력 회복 및 한도 +5000", isPassive: false },
+    { id: 2, name: "코스트 회복", type: "cost", value: 2, grade: "Epic", color: "#a855f7", desc: "최대 코스트 한도 +2", isPassive: false },
+    // 🔥 3번 카드는 일회성 소비형이므로 isPassive: false
+    { id: 3, name: "애리 보충", type: "refill", value: 1, grade: "Common", color: "#94a3b8", desc: "대기열에 새 애리 카드 보충", isPassive: false }, 
+    { id: 4, name: "탄막 강화", type: "bullet", value: 1.2, grade: "Rare", color: "#3b82f6", desc: "아군 실시간 공격력 1.2배", isPassive: false },
+    { id: 5, name: "사거리 증폭", type: "range", value: 1, grade: "Rare", color: "#3b82f6", desc: "아군 공격 사거리 +1칸", isPassive: true },
+    { id: 6, name: "신속 이동", type: "speed", value: 1, grade: "Rare", color: "#3b82f6", desc: "아군 이동 시 연속 2칸 이동", isPassive: true },
+    { id: 7, name: "방어막 전개", type: "shield", value: 0.7, grade: "Epic", color: "#a855f7", desc: "아군이 받는 피해량 30% 감소", isPassive: true },
+    { id: 8, name: "치명적 탄막", type: "crit", value: 0.2, grade: "Epic", color: "#a855f7", desc: "공격 시 20% 확률로 2배 피해", isPassive: true },
+    { id: 9, name: "탄막 초강화", type: "bullet", value: 1.5, grade: "Epic", color: "#a855f7", desc: "아군 실시간 공격력 1.5배", isPassive: true },
+    { id: 10, name: "시간 정지", type: "slow", value: 0.3, grade: "Epic", color: "#a855f7", desc: "적 행동 시 30% 확률로 행동 불발", isPassive: true },
+    // 🔥 12번 카드도 일회성 소비형이므로 isPassive: false
+     { id: 11, name: "난사!!!!!!!!!!", type: "bullet", value: 2.0, grade: "Legendary", color: "#eab308", desc: "아군 실시간 공격력 2.0배", isPassive: true },
+    { id: 12, name: "UR의 축복", type: "gradeUp", value: 1, grade: "Legendary", color: "#eab308", desc: "랜덤 아군 1명 최고등급(UR) 진화", isPassive: false },
+     { id: 13, name: "애리의 품", type: "shield", value: 0.5, grade: "Legendary", color: "#eab308", desc: "아군이 받는 피해량 50% 감소", isPassive: true },
+     {  id: 14,   name: "정기흡수", type: "vampire",value: 0.1, grade: "Legendary", color: "#eab308",  desc: "아군이 공격할 때마다 가한 피해량의 10%를 흡혈하여 체력 회복", isPassive: true }
+];
+
+// 등급별 가중치 확률 추출기 (Common: 60%, Rare: 25%, Epic: 12%, Legendary: 3%)
+function getRandomBadge() {
+    const rand = Math.random() * 100;
+    let targetGrade = rand < 60 ? "Common" : rand < 85 ? "Rare" : rand < 97 ? "Epic" : "Legendary";
+    const filtered = badgePool.filter(b => b.grade === targetGrade);
+    return filtered[Math.floor(Math.random() * filtered.length)];
+}
+
+// =========================================================================
+// [2단계] 게임 시작 시 초기 배지 선택 프로세스
+// =========================================================================
+function initBadgeSelection() {
+    const overlay = document.getElementById("badgeInitOverlay");
+    const container = document.getElementById("badgeInitContainer");
+    container.innerHTML = "";
+    
+    // 무작위 배지 3개 추출
+    const picks = [getRandomBadge(), getRandomBadge(), getRandomBadge()];
+    
+    picks.forEach((badge, index) => {
+        const card = document.createElement("div");
+        card.className = "reward-card badge-back";
+        card.innerHTML = `
+            <h3 class="question-mark">?</h3>
+            <div class="info">
+                <span style="color:${badge.color}; font-size:0.8rem; font-weight:bold;">[${badge.grade}]</span>
+                <h3>${badge.name}</h3>
+                <p>${badge.desc}</p>
+            </div>
+        `;
+        
+        card.onclick = () => {
+            if (card.classList.contains("revealed")) return;
+            
+            // 1. 클릭한 카드 뒤집기 연출
+            revealCard(card, badge);
+            
+            // 2. 1초 뒤 나머지 카드 전체 공개 및 3개 모두 일괄 획득 처리
+            setTimeout(() => {
+                const allCards = container.querySelectorAll(".reward-card");
+                allCards.forEach((c, i) => revealCard(c, picks[i]));
+                
+                // 3개 강제 인벤토리 세팅 및 데이터 가동
+                picks.forEach(p => {
+                    if (p.isPassive) {
+                        playerBadges.push(p); // 패시브만 가방에 추가
+                        applyInstantBadgeEffect(p);
+                    } else {
+                        applyInstantBadgeEffect(p); // 액티브는 효과만 즉시 발동
+                       
+                    }
+                });
+
+
+                updateBadgeUI();
+                
+                log("🎁 스타팅 배지 3개가 등록되었습니다!");
+                
+                // 2초 후 오버레이 페이드 아웃
+                setTimeout(() => { overlay.style.display = "none"; }, 2000);
+            }, 1000);
+        };
+        container.appendChild(card);
+    });
+    overlay.style.display = "flex";
+}
+
+function revealCard(card, badge) {
+    card.classList.remove("badge-back");
+    card.classList.add("revealed");
+    card.style.borderColor = badge.color;
+    const qMark = card.querySelector(".question-mark");
+    if (qMark) qMark.style.display = "none";
+}
+
+
+
+
 
 // 게임 오버 처리 함수
 function gameOver() {
@@ -737,16 +838,7 @@ function gameOver() {
         resetGame(); // 게임 상태 초기화 함수 호출
     });
 
-    // 3. 입력창 및 버튼 다시 활성화
-    const inputField = document.getElementById('playerTitle');
-    const loadBtn = document.getElementById('loadCharsBtn');
-    inputField.disabled = false;
-    loadBtn.disabled = false;
-    inputField.style.backgroundColor = "#ffffff";
-    inputField.style.cursor = "text";
-    loadBtn.style.backgroundColor = "";           // ""로 설정하면 CSS에 정의된 원래 색상으로 돌아갑니다
-    loadBtn.style.opacity = "1";                  // 투명도 복구
-    loadBtn.style.cursor = "pointer";             // 버튼 커서 복구
+
 }
 
 // 게임 초기화 함수 (별도로 구현 필요)
@@ -758,8 +850,19 @@ function resetGame() {
     totalScore = 0;
     document.getElementById("scoreDisplay").innerText = "점수: 0";
     log("게임을 새로 시작합니다.");
+
+    // 3. 입력창 및 버튼 다시 활성화
+    const inputField = document.getElementById('playerTitle');
+    const loadBtn = document.getElementById('loadCharsBtn');
+    inputField.disabled = false;
+    loadBtn.disabled = false;
+    inputField.style.backgroundColor = "#ffffff";
+    inputField.style.cursor = "text";
+    loadBtn.style.backgroundColor = "";           // ""로 설정하면 CSS에 정의된 원래 색상으로 돌아갑니다
+    loadBtn.style.opacity = "1";                  // 투명도 복구
+    loadBtn.style.cursor = "pointer";             // 버튼 커서 복구
     
-    // 3. 기타 필요한 초기화 (카드 리스트 삭제 등)
+    // 4. 기타 필요한 초기화 (카드 리스트 삭제 등)
     document.getElementById("playerChars").innerHTML = "";
     document.getElementById("battleLog").innerHTML = "";
 }
@@ -923,11 +1026,20 @@ function isRounddefeat() {
     return players.length === 0;
 }
 
+window.isBossRound = false;
 
-// 2. 적 스폰 함수 (라운드에 맞춰 적 생성)
+// =========================================================================
+// 2. 적 스폰 함수 (10라운드 단위 보스 스폰 및 스케일링 완전 자동화)
+// =========================================================================
 async function prepareRound(round) {
-    log(`라운드 ${round} 준비: 적 스폰 중...`);
+    // 1️⃣ 보스 라운드 판별 (10, 20, 30... 라운드 인지 체크)
+    window.isBossRound = (round % 10 === 0);
 
+    if ( window.isBossRound) {
+        log(`📢 [ALERT] 라운드 ${round}: 강력한 월드 보스가 출현합니다!! 🚨`);
+    } else {
+        log(`라운드 ${round} 준비: 적 스폰 중...`);
+    }
 
     let users = await fetchSheetData(); 
     if (!users) return;
@@ -938,50 +1050,92 @@ async function prepareRound(round) {
         return;
     }
     
-    // 2. N등급 카드의 이미지를 딱 하나만 가져옴
+    // 기본 N등급 카드 백업
     const nGradeCard = enemyMaster.cards.find(c => c.grade === "N");
     const nGradeImg = nGradeCard ? nGradeCard.img : CONFIG.FALLBACK_IMAGE;
 
-    
     const cells = Array.from(document.querySelectorAll("#battleGrid .cell"));
-    
-    // 적 진영(위측 3, 4, 5열) 중 비어있는 셀만 찾기
-    // (그리드가 6열(0~5) 기준이라고 가정)
     const emptyEnemyCells = cells.filter((c, index) => {
-        const y = Math.floor(index / 6); // 6열 그리드 기준
+        const y = Math.floor(index / 6); 
         return y <= 4 && !c.dataset.char;
     });
 
-    // 스폰할 적의 수 설정 (라운드가 오를수록 많아짐, 최대 빈칸 수까지만)
-    const spawnCount = Math.min(emptyEnemyCells.length, 2 + Math.floor(round / 2)); 
+    // 2️⃣ 변수 선언 (보스 vs 일반 격차 부여)
+    let spawnCount, enemyName, hp, atk, range, enemyImg, borderStyle, glowStyle;
 
-    // 빈 칸을 무작위로 섞어서 랜덤 위치에 배치
+    if ( window.isBossRound) {
+        // 🔥 [보스 전용 세팅]
+        spawnCount = 1; // 보스는 무조건 한 마리만 위엄있게 등장!
+        enemyName = `👑👑 [WORLD BOSS] 초 미소녀 멘헤라 애리 Lv.${round}`;
+        
+        // 스탯 대폭 상향 (일반 몹 체력의 4배, 공격력 2배, 광역 사거리 4칸)
+        hp = (4000 + (round * 2000)) * 4; 
+        atk = (100 + (round * 150)) * 2;  
+        range = 4; 
+
+        // 적 마스터의 카드 중 UR -> SSR -> SR 순서로 고화질 일러스트가 있다면 보스 이미지로 강탈!
+        const bossCard = enemyMaster.cards.find(c => c.grade.toUpperCase() === "UR") || 
+                         enemyMaster.cards.find(c => c.grade.toUpperCase() === "SSR") || 
+                         enemyMaster.cards.find(c => c.grade.toUpperCase() === "SR") || 
+                         nGradeCard;
+        enemyImg = bossCard ? bossCard.img : CONFIG.FALLBACK_IMAGE;
+
+        // 보스 전용 붉은 해골 아우라 이펙트
+        borderStyle = "5px ridge #ef4444"; 
+        glowStyle = "0 0 25px #ef4444, inset 0 0 15px #ef4444"; 
+
+    } else {
+        const rawCount = 2 + Math.floor(round / 2);
+        // 🍃 [일반 라운드 세팅 - 기존 로직 유지]
+        spawnCount = Math.min(emptyEnemyCells.length, (rawCount - 1) % 10 + 1); // 1~10 사이에서 라운드에 따라 증가 후 초기화 반복
+        enemyName = `오염된 밤티 애리 Lv.${round}`;
+        hp = 500 + (round * 500);
+        atk = 50 + (round * 100);
+        range = 2;
+        enemyImg = nGradeImg;
+
+        // 라운드 일의 자리 숫자에 따라 촘촘하게 테두리 진화 (예: 14라운드는 파란색, 18라운드는 보라색)
+        const roundStep = round % 10;
+        if (roundStep >= 7) {
+            borderStyle = "3px dashed #a855f7"; // 보라색 점선
+            glowStyle = "0 0 10px #a855f7";
+        } else if (roundStep >= 4) {
+            borderStyle = "3px solid #3b82f6";  // 파란색 실선
+            glowStyle = "0 0 6px #3b82f6";
+        } else {
+            borderStyle = "2px solid #ff5555";  // 기본 빨간색
+            glowStyle = "none";
+        }
+    }
+
+    // 빈 칸 무작위 배치
     emptyEnemyCells.sort(() => Math.random() - 0.5);
 
     for (let i = 0; i < spawnCount; i++) {
         const targetCell = emptyEnemyCells[i];
         const cellIndex = cells.indexOf(targetCell);
         
-        // 라운드에 따라 적 스탯(체력, 공격력) 강화
+        // 공통 데이터 주입 루프
         const enemyData = {
             uniqueId: `enemy_${round}_${i}_${Date.now()}`,
-            name: `오염된 밤티 애리 Lv.${round}`,
+            name: enemyName,
             side: "enemy",
-            grade: "N", // N등급 이펙트 사용
-            hp: 8000 + (round * 2000),     // 기본 8000 + 라운드당 2000
-            maxHp: 8000 + (round * 2000),
-            atk: 500 + (round * 150),      // 공격력 스케일링
-            range: 2,
+            grade: window.isBossRound ? "UR" : "N", // 보스는 UR등급 이펙트 연동
+            hp: hp,     
+            maxHp: hp,
+            atk: atk,      
+            range: range,
             x: cellIndex % 6,
             y: Math.floor(cellIndex / 6),
-            img: nGradeImg // N등급 카드의 이미지 사용
+            img: enemyImg 
         };
 
-        // 셀에 데이터 저장 및 UI(이미지, 체력바) 그리기
         targetCell.dataset.char = JSON.stringify(enemyData);
+        
+        // 동적 스타일 시각화 주입
         targetCell.innerHTML = `
             <div style="position: relative; width: 100%; height: 100%;">
-                <img src="${enemyData.img}" style="width:100%; height:100%; object-fit:cover; border-radius:8px; border: 2px solid #ff4444;">
+                <img src="${enemyData.img}" style="width:100%; height:100%; object-fit:cover; border-radius:8px; border: ${borderStyle}; box-shadow: ${glowStyle};">
                 <div class="hpbar" style="position:absolute; bottom:-10px; left:0; width:100%; height:8px; background:#333; border-radius:4px; overflow:hidden;">
                     <div class="hpfill" style="width:100%; height:100%; background:red; transition: width 0.2s;"></div>
                 </div>
@@ -989,10 +1143,12 @@ async function prepareRound(round) {
         `;
     }
     
-    log(`적 ${spawnCount}마리가 나타났습니다!`);
+    if (isBossRound) {
+        log(`😱 경고: 전쟁터에 압도적인 에너지를 가진 보스가 출현했습니다! 무찌르세요!`);
+    } else {
+        log(`적 ${spawnCount}마리가 나타났습니다!`);
+    }
 }
-
-
 
 
 
@@ -1108,7 +1264,7 @@ async function setupCharacters() {
   return charDiv;
 }
 
-
+let globalPlayerCards = []; // 🔥 구글 시트에서 불러온 플레이어의 전체 카드 목록을 전역에 백업하는 변수
 // 버튼 클릭 시 실행
 document.getElementById("loadCharsBtn").addEventListener("click", setupCharactersByUser);
 
@@ -1129,7 +1285,17 @@ if (!users) {
 console.log("✅ 구글 시트에서 가져온 데이터:", users);
 
   // 입력칸에서 유저 이름 가져오기
-  const playerName = document.getElementById("playerTitle").value.trim();
+    const inputName = document.getElementById("playerTitle").value.trim();
+    let playerName = inputName;
+
+
+    let isWooriMode = false;
+  
+    if (inputName === "우리") {
+        isWooriMode = true;
+        playerName = "느대"; // 검색은 느대 데이터로 함
+        log("👤 '우리'님 환영합니다! '애리'의 축복을 불러옵니다.");
+    }
  
 
   const playerDiv = document.getElementById("playerChars");
@@ -1140,11 +1306,49 @@ console.log("✅ 구글 시트에서 가져온 데이터:", users);
 
   // 플레이어 캐릭터 세팅
   const playerUser = users.find(u => u.nickname === playerName);
-  if(playerUser){
-    playerUser.cards.forEach(card=>{
-      const charDiv = createCharDiv(card);
-      playerDiv.appendChild(charDiv);
+  
+ if (playerUser) {
+        // 2. 🔥 [분기 처리] 우리 모드 vs 일반 모드
+      if (isWooriMode) {
+    log("🎁 특별 이벤트: R등급 카드 3개를 지급합니다!");
+    
+    // 1. 모든 유저의 데이터에서 카드 모으기
+    const allPossibleCards = [];
+    users.forEach(user => {
+        if (user.cards && Array.isArray(user.cards)) {
+            allPossibleCards.push(...user.cards);
+        }
     });
+
+    // 2. R등급 카드만 필터링
+    const rCards = allPossibleCards.filter(c => c.grade === "R");
+    
+    // 3. 🔥 R등급이 하나라도 있다면? 3개 강제 생성 (중복 허용)
+    const randomR3 = [];
+    if (rCards.length > 0) {
+        for (let i = 0; i < 3; i++) {
+            // rCards 배열에서 무작위로 하나를 뽑되, 카드가 하나면 계속 그 카드만 뽑힘
+            const randomCard = rCards[Math.floor(Math.random() * rCards.length)];
+            randomR3.push(randomCard);
+        }
+    } else {
+        log("⚠️ 경고: R등급 카드가 하나도 없습니다!");
+    }
+    
+    // 4. 생성 및 전역 변수 업데이트
+    randomR3.forEach(card => {
+        const charDiv = createCharDiv(card);
+        playerDiv.appendChild(charDiv);
+    });
+    globalPlayerCards = randomR3;
+}else {
+            // 일반 모드: 기존 로직 그대로 사용
+            playerUser.cards.forEach(card => {
+                const charDiv = createCharDiv(card);
+                playerDiv.appendChild(charDiv);
+            });
+            globalPlayerCards = playerUser.cards;
+        }
 
     // 2. 캐릭터 불러오기가 성공했다면 비활성화
     const inputField = document.getElementById('playerTitle');
@@ -1325,7 +1529,7 @@ async function fetchSheetData() {
 };
 
 
-const PLAYER_COST_LIMIT = 8;
+var PLAYER_COST_LIMIT = 8;
 const ENEMY_COST_LIMIT  = 8;
 
 function removeSpecificChar(uniqueId) {
@@ -1340,6 +1544,42 @@ function removeSpecificChar(uniqueId) {
         }
     });
 }
+
+
+
+// =========================================================================
+// [실시간 보충] 내 카드 뭉치에서 랜덤으로 카드를 뽑아 화면에 추가 배치
+// =========================================================================
+function refillPlayerCard(amount = 1) {
+    const playerDiv = document.getElementById("playerChars");
+    if (!playerDiv) return;
+
+    // 안전장치: 구글 시트 조회를 아직 안 했거나 카드가 없는 경우
+    if (!globalPlayerCards || globalPlayerCards.length === 0) {
+        log("⚠️ 구글 시트에서 캐릭터 데이터를 먼저 불러와야 카드를 보충할 수 있습니다!");
+        return;
+    }
+
+    for (let i = 0; i < amount; i++) {
+        // 1. 내 카드 풀(배열)에서 랜덤으로 인덱스 하나 추출
+        const randomIndex = Math.floor(Math.random() * globalPlayerCards.length);
+        const randomCard = globalPlayerCards[randomIndex];
+
+        // 2. 이미 짜놓으신 [훌륭한 DOM 생성 함수]를 그대로 재활용하여 카드 생성!
+        const newCharDiv = createCharDiv(randomCard);
+        
+        // 3. innerHTML = "" 로 지우지 않고, appendChild를 통해 기존 카드들 옆에 슬쩍 '보충'합니다.
+        playerDiv.appendChild(newCharDiv);
+        
+        log(`🔄 [카드 충전] 덱에 [${randomCard.grade}] ${randomCard.name} 카드가 추가되었습니다!`);
+    }
+}
+
+
+
+
+
+
 // 공격자 위치 계산용 헬퍼 (함수 밖에 선언하거나 상단에 두세요)
 function getGridPos(cell) {
  const cells = Array.from(document.querySelectorAll("#battleGrid .cell"));
@@ -1347,70 +1587,158 @@ function getGridPos(cell) {
     return { x: index % 6, y: Math.floor(index / 6) };
 }
 
+
+
+
+
+// 🔥 [백엔드 주입 5] 신속 이동 효과 연동형 이동 엔진
 function moveUnit(unit, fromCell, allUnitsOnBoard) {
-    const posA = getGridPos(fromCell);
-    let nearestTarget = null;
-    let minD = Infinity;
+    const hasSpeedBadge = playerBadges.some(b => b.type === "speed");
+    // 신속 이동 배지 소지 시 아군은 루프가 2번 돌아 한 턴에 총 2칸 고속 전진함
+    const moveCount = (unit.side === 'player' && hasSpeedBadge) ? 2 : 1;
+    let currentFromCell = fromCell;
 
-    // 1. 타겟 찾기 (side가 다른 모든 유닛을 대상으로)
-    allUnitsOnBoard.filter(t => t.hp > 0 && t.side !== unit.side).forEach(t => {
+    for (let i = 0; i < moveCount; i++) {
+        const posA = getGridPos(currentFromCell);
+        let nearestTarget = null;
+        let minD = Infinity;
 
+        allUnitsOnBoard.filter(t => t.hp > 0 && t.side !== unit.side).forEach(t => {
+            const toCell = [...document.querySelectorAll("#battleGrid .cell")]
+                .find(c => c.dataset.char && JSON.parse(c.dataset.char).uniqueId === t.uniqueId);
+            if (!toCell) return;
+            const posB = getGridPos(toCell);
+            const dist = Math.abs(posA.x - posB.x) + Math.abs(posA.y - posB.y);
+            if (dist < minD) { minD = dist; nearestTarget = toCell; }
+        });
 
-        // 모든 셀 중에서 해당 유닛을 가진 셀 찾기
-        const toCell = [...document.querySelectorAll("#battleGrid .cell")]
-            .find(c => c.dataset.char && JSON.parse(c.dataset.char).uniqueId === t.uniqueId);
-        
-        if (!toCell) return;
-        const posB = getGridPos(toCell);
-        const dist = Math.abs(posA.x - posB.x) + Math.abs(posA.y - posB.y);
-        if (dist < minD) { minD = dist; nearestTarget = toCell; }
-    });
-
-    if (nearestTarget) {
-        const posB = getGridPos(nearestTarget);
-        const nextPos = {
-            x: posA.x + Math.sign(posB.x - posA.x),
-            y: posA.y + Math.sign(posB.y - posA.y)
-        };
-        
-        // 2. 이동할 타겟 셀 찾기 (#battleGrid 내부에서)
-        const nextCell = [...document.querySelectorAll("#battleGrid .cell")]
-            .find(c => getGridPos(c).x === nextPos.x && getGridPos(c).y === nextPos.y);
-          // 3. 이동 수행
-      if (nextCell && !nextCell.dataset.char) { // 비어있는지 확인
-          const isUR = fromCell.classList.contains("UR-active");
-          // 1. 기존 데이터를 가져와서 객체로 변환
-          
-          let unitData = JSON.parse(fromCell.dataset.char);
-        
-          
-          
-          // 2. [핵심] 새로운 셀의 좌표를 계산해서 데이터에 덮어쓰기
-          const newPos = getGridPos(nextCell); // getGridPos 함수를 활용!
-          unitData.x = newPos.x;
-          unitData.y = newPos.y;
-          
-          // 3. 이제 수정된 데이터를 문자열로 변환하여 저장
-          nextCell.dataset.char = JSON.stringify(unitData);
-          nextCell.innerHTML = fromCell.innerHTML;
-         
-              // [중요] UR 클래스 이전 및 원본 삭제
-            if (isUR) {
-                fromCell.classList.remove("UR-active");
-                nextCell.classList.add("UR-active");
+        if (nearestTarget) {
+            const posB = getGridPos(nearestTarget);
+            const nextPos = {
+                x: posA.x + Math.sign(posB.x - posA.x),
+                y: posA.y + Math.sign(posB.y - posA.y)
+            };
+            
+            const nextCell = [...document.querySelectorAll("#battleGrid .cell")]
+                .find(c => getGridPos(c).x === nextPos.x && getGridPos(c).y === nextPos.y);
+                
+            if (nextCell && !nextCell.dataset.char) {
+                const isUR = currentFromCell.classList.contains("UR-active");
+                let unitData = JSON.parse(currentFromCell.dataset.char);
+                
+                const newPos = getGridPos(nextCell);
+                unitData.x = newPos.x; unitData.y = newPos.y;
+                
+                nextCell.dataset.char = JSON.stringify(unitData);
+                nextCell.innerHTML = currentFromCell.innerHTML;
+                
+                if (isUR) {
+                    currentFromCell.classList.remove("UR-active");
+                    nextCell.classList.add("UR-active");
+                }
+                currentFromCell.innerHTML = "";
+                delete currentFromCell.dataset.char;
+                currentFromCell = nextCell; // 연속 이동 포지션 갱신
+            } else {
+                break; 
             }
-          
-          
-          fromCell.innerHTML = "";
-          delete fromCell.dataset.char;
-          
-          console.log(`[이동] ${unit.name} -> (${nextCell.dataset.x}, ${nextCell.dataset.y}) | uniqueId: ${unit.uniqueId}`);
-          console.log(`[이동 성공] ${unitData.name} 이동 완료 -> (${unitData.x}, ${unitData.y})`);
-      } else {
-          console.log("[이동 실패] 다음 칸이 점유됨");
-      }
+        }
     }
 }
+
+// 🔥 [백엔드 주입 6] 일회성 즉시 발동형 배지 데이터 변조기
+async function applyInstantBadgeEffect(badge) {
+    switch (badge.type) {
+        
+       case "hp":
+            document.querySelectorAll("#battleGrid .cell").forEach(cell => {
+                if (cell.dataset.char) {
+                    let d = JSON.parse(cell.dataset.char);
+                    if (d.side === 'player') {
+                        d.hp += badge.value; d.maxHp += badge.value;
+                        cell.dataset.char = JSON.stringify(d);
+                        const hpbar = cell.querySelector(".hpfill");
+                        if (hpbar) hpbar.style.width = "100%";
+                    }
+                }
+            });
+            log("💖 [배지 즉시발동] 모든 아군의 체력회복 후 한도가 5000 상승했습니다.");
+            break;
+
+        case "cost":
+            window.PLAYER_COST_LIMIT += badge.value;
+            updateCostDisplay();
+            log(`💎 [배지 즉시발동] 최대 가용 코스트 한도가 +${badge.value} 확장되었습니다.`);
+            break;
+
+        case "refill":
+            log("🔄 [배지 즉시발동] 소환 대기 리스트에 새로운 캐릭터 카드가 추가 배치됩니다.");
+            // 실제 카드 보충 로직은 이미 만들어둔 refillPlayerCard 함수를 호출하는 것으로 간단히 처리!
+            refillPlayerCard(1);
+            break;
+
+     case "gradeUp":
+            if (typeof playerHand !== 'undefined' && playerHand.length > 0) {
+                // 1. 내가 가진 손패 카드 중 무작위로 1장 선택
+                const randomIndex = Math.floor(Math.random() * playerHand.length);
+                const targetCard = playerHand[randomIndex];
+                const oldGrade = targetCard.grade;
+
+                // 2. 등급을 [UR]로 각성
+                targetCard.grade = "UR"; 
+
+                // 3. UR 등급에 걸맞게 스탯 뻥튀기
+                if (targetCard.atk) targetCard.atk = Math.floor(targetCard.atk * 2.0);
+                if (targetCard.hp) {
+                    targetCard.hp = Math.floor(targetCard.hp * 2.5);
+                    targetCard.maxHp = Math.floor(targetCard.maxHp * 2.5);
+                }
+
+                // 4. 🔥 [핵심] "스으리슬쩍" 데이터에서 UR 등급의 일러스트 훔쳐오기
+                try {
+                    const users = await fetchSheetData();
+                    if (users) {
+                        const enemyMaster = users.find(u => u.nickname === "스으리슬쩍");
+                        if (enemyMaster && enemyMaster.cards) {
+                            // 내 카드 이름과 같으면서 등급이 UR인 카드를 먼저 찾고, 없으면 첫 번째 UR 카드를 가져옴
+                            const urCard = enemyMaster.cards.find(c => c.name === targetCard.name && c.grade.toUpperCase() === "UR") || 
+                                           enemyMaster.cards.find(c => c.grade.toUpperCase() === "UR");
+                            
+                            if (urCard && urCard.img) {
+                                targetCard.img = urCard.img; // 🖼️ 각성 일러스트 주입!
+                                log(`📸 [UR 각성] '${urCard.name}'의 UR 전용 일러스트 스킨이 적용되었습니다.`);
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error("UR 이미지 스킨을 가져오는 중 오류 발생:", err);
+                }
+
+                log(`✨ [UR의 축복] 보유 중인 카드 [${targetCard.name}] (${oldGrade}) 카드가 최고 등급 [UR]로 각성했습니다!`);
+                
+                // 5. 손패 UI 새로고침
+                if (typeof updateHandUI === "function") updateHandUI();
+                else if (typeof renderHand === "function") renderHand();
+
+            } else {
+                log(`⚠️ [UR의 축복] 현재 손에 쥔 카드가 없어 축복이 허공으로 날아갔습니다!`);
+            }
+            break;
+
+            case "bullet":
+            GLOBAL_ATK_MULT *= badge.value; // 기존 배율에 새 배지 배수를 곱함 (예: 1.0 * 1.5 = 1.5)
+        
+          log(`⚔️ [배지 즉시발동] '${badge.name}'(${badge.grade}) 효과로 총 공격력 배율이 [${GLOBAL_ATK_MULT.toFixed(2)}배]가 되었습니다.`);
+            break;  
+
+
+    }
+}
+
+var GLOBAL_ATK_MULT = 1.0; // 전역 공격력 배율 변수 (초기값 1.0)
+
+
+
 function findTargetsInRange(unit, allUnits) {
     // 1. 공격자의 현재 좌표는 매개변수로 넘어온 unit 객체에서 바로 가져옵니다.
     // allUnits에서 다시 find할 필요가 없습니다. (이미 데이터가 갱신되어 들어오기 때문)
@@ -1433,228 +1761,502 @@ function findTargetsInRange(unit, allUnits) {
 
 
 
-
+// =========================================================================
+// [3단계 & 백엔드] 인게임 전투 루프 내 실시간 배지 판정 주입
+// =========================================================================
 function startBattle() {
-if (isBattleRunning) return;
-
-
-const allCells = document.querySelectorAll("#battleGrid .cell");
-  const allUnits = Array.from(allCells)
-    .filter(c => c.dataset.char)
-    .map(c => JSON.parse(c.dataset.char));
-
-if (isRoundCleared()) {
+    if (isBattleRunning) return;
+    isBattleRunning = true;
+    log("=== 전투 시작 ===");
+    if (isRoundCleared()) {
         log(`스테이지 ${currentRound}  적이 몰려옵니다...`);
         prepareRound(currentRound);
     }
 
-    isBattleRunning = true;
-
-
-  // 2. side 속성을 기준으로 명확하게 분리
-  let players = allUnits.filter(u => u.side === 'player');
-  let enemies = allUnits.filter(u => u.side === 'enemy');
-
-
-
-  log("=== 전투 시작 ===");
-
-  let round=1;
-  const interval=setInterval(()=>{
-    let moveQueue = [];
-    // 0. 최신 필드 데이터 전부 가져오기 (매 라운드마다 갱신!)
-    const allUnits = Array.from(document.querySelectorAll("#battleGrid .cell"))
-        .filter(c => c.dataset.char)
-        .map(c => JSON.parse(c.dataset.char));
-
-    let players = allUnits.filter(u => u.side === 'player');
-    let enemies = allUnits.filter(u => u.side === 'enemy');
-
-    
-
-    log(`-- 라운드 ${round} --`);
-
-players.filter(p => p.hp > 0).forEach(p => {
-    // 1. [핵심] 루프마다 DOM에서 최신 데이터를 다시 가져옴 (좌표/HP 최신화)
-    const currentCell = document.querySelector(`[data-char*='"uniqueId":"${p.uniqueId}"']`);
-    if (!currentCell) return;
-    
-    // 이 시점에서 p를 최신 데이터로 덮어씀
-    const pCurrent = JSON.parse(currentCell.dataset.char);
-    
-    // 2. 최신 좌표를 기준으로 타겟 찾기
-    const targets = findTargetsInRange(pCurrent, allUnits);
-    
-    console.log(`${pCurrent.name} 위치:(${pCurrent.x},${pCurrent.y}) / 타겟 수: ${targets.length}`);
-
-    if (targets.length > 0) {
-        const target = targets[0];
+    let round = 1;
+    const interval = setInterval(() => {
+        let moveQueue = [];
         
-        // 3. HP 깎기 (데이터 객체 직접 수정)
-        target.hp -= pCurrent.atk;
-        if (target.hp < 0) target.hp = 0;
-        
-        // 4. 타겟 셀을 찾아 최신 데이터 저장 및 UI 업데이트
-        const targetCell = document.querySelector(`[data-char*='"uniqueId":"${target.uniqueId}"']`);
-        if (targetCell) {
-            // [중요] 수정된 target 데이터를 DOM에 다시 박제
-            targetCell.dataset.char = JSON.stringify(target);
+        // 현재 필드 위 유닛 데이터 수집 파트
+        const allUnits = Array.from(document.querySelectorAll("#battleGrid .cell"))
+            .filter(c => c.dataset.char)
+            .map(c => JSON.parse(c.dataset.char));
+
+        let players = allUnits.filter(u => u.side === 'player');
+        let enemies = allUnits.filter(u => u.side === 'enemy');
+
+        // ------------------------------------------------
+        // [아군(Player) 행동 턴]
+        // ------------------------------------------------
+        players.filter(p => p.hp > 0).forEach(p => {
+            const currentCell = document.querySelector(`[data-char*='"uniqueId":"${p.uniqueId}"']`);
+            if (!currentCell) return;
+            let pCurrent = JSON.parse(currentCell.dataset.char);
             
-            // 체력바 UI 업데이트
-            const hpbar = targetCell.querySelector(".hpfill");
-            if (hpbar) {
-                const percent = (target.hp / target.maxHp) * 100;
-                hpbar.style.width = Math.max(0, percent) + "%";
+            // 🔥 [백엔드 주입 1] 탄막 강화 & 사거리 증폭 실시간 수식 변조
+            playerBadges.forEach(badge => {
+                 pCurrent.atk = Math.floor(pCurrent.atk * GLOBAL_ATK_MULT);
+                if (badge.type === "range") pCurrent.range += badge.value;
+            });
+
+            const targets = findTargetsInRange(pCurrent, allUnits);
+            if (targets.length > 0) {
+                const target = targets[0];
+                
+                // 🔥 [백엔드 주입 2] 치명적 탄막 (확률형 크리티컬 데미지 배율 연산)
+                let finalDamage = pCurrent.atk;
+                let isCrit = false;
+                const critBadge = playerBadges.find(b => b.type === "crit");
+                if (critBadge && Math.random() < critBadge.value) {
+                    finalDamage *= 2;
+                    isCrit = true;
+                }
+
+                target.hp = Math.max(0, target.hp - finalDamage);
+                
+                // UI 갱신 유도용 백엔드 동기화 처리
+                const targetCell = document.querySelector(`[data-char*='"uniqueId":"${target.uniqueId}"']`);
+                if (targetCell) {
+                    targetCell.dataset.char = JSON.stringify(target);
+                    const hpbar = targetCell.querySelector(".hpfill");
+                    if (hpbar) hpbar.style.width = ((target.hp / target.maxHp) * 100) + "%";
+
+                    if (target.hp <= 0) {
+                        targetCell.innerHTML = "";
+                        targetCell.classList.remove("UR-active");
+                        delete targetCell.dataset.char;
+                        addScore(currentRound * 100);
+                        updateCostDisplay();
+                    }
+                }
+                    // =========================================================================
+                    // 🔥 [백엔드 주입 - 흡혈 로직] 가한 피해량의 일부를 내 HP로 전환!
+                    // =========================================================================
+                    const vampireBadge = playerBadges.find(b => b.type === "vampire");
+                    if (vampireBadge && pCurrent.hp > 0) {
+                        // 최대 체력(maxHp)을 넘지 않는 선에서 회복량 계산
+                        const healAmount = Math.floor(finalDamage * vampireBadge.value);
+                        
+                        if (healAmount > 0) {
+                            const oldHp = pCurrent.hp;
+                            pCurrent.hp = Math.min(pCurrent.maxHp, pCurrent.hp + healAmount);
+                            const actualHeal = pCurrent.hp - oldHp; // 실제 회복된 양
+
+                            // 갱신된 아군의 체력 데이터를 DOM(셀)에 다시 저장!! (이걸 안 하면 체력이 안 변함)
+                            currentCell.dataset.char = JSON.stringify(pCurrent);
+
+                            // 아군 체력바 UI 실시간 새로고침
+                            const pCurrentHpbar = currentCell.querySelector(".hpfill");
+                            if (pCurrentHpbar) {
+                                pCurrentHpbar.style.width = ((pCurrent.hp / pCurrent.maxHp) * 100) + "%";
+                            }
+
+                            // 흡혈 성공 로그 추가 출력 (원한다면 위트 있는 드립으로 커스텀 가능)
+                            if (actualHeal > 0) {
+                                log(`🩸 [정기 흡수] ${pCurrent.name}이(가) 권능을 통해 정기로 ${actualHeal} 만큼 체력을 회복했습니다! (${pCurrent.hp}/${pCurrent.maxHp})`);
+                            }
+                        }
+                    }
+
+
+                
+                // 🔥 [교체 적용 1] 아군 공격 로그를 유머 생성기로 대체!
+                const combatLog = getRandomAttackLog(pCurrent, target, finalDamage, isCrit);
+                log(combatLog);
+
+                if (currentCell && targetCell) shootProjectile(currentCell, targetCell, pCurrent.grade);
+            } else {
+                moveQueue.push({ unit: pCurrent, cell: currentCell });
             }
+        });
 
-            // 사망 처리
-            if (target.hp <= 0) {
-                targetCell.innerHTML = "";
-                targetCell.classList.remove("UR-active"); // 오로라 삭제!
-                delete targetCell.dataset.char;
+        // ------------------------------------------------
+        // [적군(Enemy) 행동 턴]
+        // ------------------------------------------------
+        enemies.filter(e => e.hp > 0).forEach(e => {
+            const fromCell = document.querySelector(`[data-char*='"uniqueId":"${e.uniqueId}"']`);
+            if (!fromCell) return;
+            const eCurrent = JSON.parse(fromCell.dataset.char);
+            
+            const targets = findTargetsInRange(eCurrent, allUnits);
+            if (targets.length > 0) {
+                const target = targets[0];
 
-                            // 등급에 따른 점수 획득
-                const points =  currentRound * 100;
-                addScore(points);
+                // 🔥 [교체 및 위치 조정 2] 시간 정지 배지 체크를 타겟 확보 직후로 이동!
+                const slowBadge = playerBadges.find(b => b.type === "slow");
+                if (slowBadge && Math.random() < slowBadge.value) {
+                    // 데미지를 0으로 넘겨 행동 불발/시간 정지 전용 드립을 출력합니다.
+                    const missLog = getRandomAttackLog(eCurrent, target, 0);
+                    log(missLog);
+                    return; 
+                }
+                
+                // 🔥 [백엔드 주입 4] 방어막 전개 (아군이 최종 피격 시 데미지 30% 감쇄 연산)
+                let enemyDamage = eCurrent.atk;
+                const shieldBadge = playerBadges.find(b => b.type === "shield");
+                if (shieldBadge) {
+                    enemyDamage = Math.max(1, Math.floor(enemyDamage * shieldBadge.value));
+                }
 
+                target.hp = Math.max(0, target.hp - enemyDamage);
+                
+                const targetCell = document.querySelector(`[data-char*='"uniqueId":"${target.uniqueId}"']`);
+                if (targetCell) {
+                    targetCell.dataset.char = JSON.stringify(target);
+                    const hpbar = targetCell.querySelector(".hpfill");
+                    if (hpbar) hpbar.style.width = ((target.hp / target.maxHp) * 100) + "%";
 
-                updateCostDisplay();
-                log(`${target.name}이(가) 쓰러졌습니다!`);
+                    if (target.hp <= 0) {
+                        targetCell.innerHTML = "";
+                        targetCell.classList.remove("UR-active");
+                        delete targetCell.dataset.char;
+                        updateCostDisplay();
+                    }
+                }
+
+                // 🔥 [교체 적용 3] 적군 공격 로그를 유머 생성기로 대체!
+                const combatLog = getRandomAttackLog(eCurrent, target, enemyDamage);
+                log(combatLog);
+
+                if (fromCell && targetCell) shootProjectile(fromCell, targetCell, eCurrent.grade);
+            } else {
+                moveQueue.push({ unit: eCurrent, cell: fromCell });
+            }
+        });
+
+        // 이동 큐 처리 실행
+        moveQueue.forEach(item => moveUnit(item.unit, item.cell, allUnits));
+
+        // ------------------------------------------------
+        // [라운드 클리어 및 루프 종료 판정]
+        // ------------------------------------------------
+        if (isRoundCleared()) {
+            clearInterval(interval); 
+            isBattleRunning = false;
+            log(`🎉 스테이지 ${currentRound} 클리어 성공!`);
+            if (isRounddefeat()) {
+                const remainingCards = document.querySelectorAll("#playerChars .char-card").length;
+                if (remainingCards === 0) {
+                    log("❌ 카드가 없고 아군이 전멸했습니다. 게임 오버!");
+                    clearInterval(interval);
+                    isBattleRunning = false;
+                    gameOver(); 
+                    return;
+                }
+            }
+    
+            setTimeout(() => { showRoundRewards(); }, 1000); 
+            return;
+        } else if (isRounddefeat()) {
+            const remainingCards = document.querySelectorAll("#playerChars .char-card").length;
+
+            if (remainingCards === 0) {
+                log("❌ 카드가 없고 아군이 전멸했습니다. 게임 오버!");
+                clearInterval(interval);
+                isBattleRunning = false;
+                gameOver(); 
+                return;
+            } else {
+                log(`스테이지 ${currentRound} 패배! 남은 카드로 재정비하세요.`);
+                clearInterval(interval);
+                isBattleRunning = false;
+                currentRound++; 
+                log(`전투가 멈췄습니다. 카드를 배치하고 다시 '전투 시작'을 누르세요.`);
+                return;
             }
         }
-        
-        log(`${pCurrent.name} → ${target.name} 공격! (HP:${target.hp})`);
-        if (currentCell && targetCell) shootProjectile(currentCell, targetCell, pCurrent.grade);
-        
-    } else {
-        // 이동 시에도 최신 데이터(pCurrent)를 넘겨줌
-       moveQueue.push({ unit: pCurrent, cell: currentCell });
-    }
-});
 
-enemies.filter(e => e.hp > 0).forEach(e => {
-    // 1. [핵심] 루프마다 DOM에서 최신 데이터를 다시 가져옴 (좌표/HP 최신화)
-    const fromCell = document.querySelector(`[data-char*='"uniqueId":"${e.uniqueId}"']`);
-    if (!fromCell) return;
+        round++;
+    }, 1000);
+}
+function getRandomAttackLog(attacker, target, damage, isCrit = false) {
+    const isBoss = attacker.name.includes("BOSS");
+    const isUR = attacker.grade === "UR";
 
-    // 현재 셀의 최신 데이터로 업데이트
-    const eCurrent = JSON.parse(fromCell.dataset.char);
-    
-    // 2. 최신 데이터(eCurrent)를 사용하여 타겟 찾기
-    const targets = findTargetsInRange(eCurrent, allUnits);
-    
-    console.log(`${eCurrent.name} 위치:(${eCurrent.x},${eCurrent.y}) / 타겟 수: ${targets.length}`);
-    if (targets.length === 0) {
-        console.log(`${eCurrent.name} 근처에 적이 없습니다. 사거리:${eCurrent.range}`);
+    if (damage <= 0) {
+        const missLogs = [
+            `💨 ${target.name}이(가) 회피! "어라? 춤추는 줄?"`,
+            `💤 ${attacker.name}의 헛손질! "방금 뭐 함?"`,
+            `🛡️ ${target.name}이 가볍게 댄스로 회피!`,
+            `🤫 공격 증발! ${attacker.name}의 뇌정지 발동.`
+        ];
+        return missLogs[Math.floor(Math.random() * missLogs.length)];
     }
 
-    // 3. 공격 실행
-    if (targets.length > 0) {
-        const target = targets[0];
-        
-        // 데이터 수정
-        target.hp -= eCurrent.atk;
-        if (target.hp < 0) target.hp = 0;
-        
-        const targetCell = document.querySelector(`[data-char*='"uniqueId":"${target.uniqueId}"']`);
-        if (targetCell) {
-            // [중요] 최신 데이터를 DOM에 반영
-            targetCell.dataset.char = JSON.stringify(target);
-            
-            // 체력바 업데이트
-            const hpbar = targetCell.querySelector(".hpfill");
-            if (hpbar) {
-                const percent = (target.hp / target.maxHp) * 100;
-                hpbar.style.width = Math.max(0, percent) + "%";
-            }
-
-            // 사망 처리
-            if (target.hp <= 0) {
-                targetCell.innerHTML = "";
-                targetCell.classList.remove("UR-active"); // 오로라 삭제!
-                delete targetCell.dataset.char;
-
-                updateCostDisplay();
-                log(`${target.name}이(가) 쓰러졌습니다!`);
-            }
-        }
-        
-        log(`${eCurrent.name} → ${target.name} 공격! (HP:${target.hp})`);
-        if (fromCell && targetCell) shootProjectile(fromCell, targetCell, eCurrent.grade);
-        
-    } else {
-        // 4. 공격 대상 없으면 이동 (최신 데이터 eCurrent 사용)
-        moveQueue.push({ unit: eCurrent, cell: fromCell });
-    }
-});
-
-// 5. 이제 모아둔 moveQueue를 순회하며 이동 실행!
-    moveQueue.forEach(item => {
-        moveUnit(item.unit, item.cell, allUnits);
-    });
-// 2. 라운드 클리어 체크
-    if (isRoundCleared()) {
-        log(`스테이지  ${currentRound} 클리어!`);
-
-
-        
-        // [핵심] 여기서 인터벌을 바로 멈춤!
-        clearInterval(interval); 
-        isBattleRunning = false;
-
-              if (isRounddefeat()) {
-              // 1. 남은 카드가 있는지 확인 (0개면 진짜 게임 오버)
-              const remainingCards = document.querySelectorAll("#playerChars .char-card").length;
-
-              if (remainingCards === 0) {
-              log("❌ 카드가 없고 아군이 전멸했습니다. 게임 오버!");
-              clearInterval(interval);
-              isBattleRunning = false;
-              gameOver(); // 최종 패배 함수 호출
-              return;}}
-    
-
-
-        
-        // 3. 다음 라운드 준비
-        currentRound++;
-        log(`전투가 멈췄습니다. 다시 '전투 시작'을 누르면 라운드 ${currentRound}가 시작됩니다.`);
-        
-        return; // 루프의 나머지 코드를 더 이상 실행하지 않고 즉시 종료
+    if (isBoss) {
+        const bossLogs = [
+            `🚨 [BOSS] ${attacker.name}의 광역 폭격! (-${damage})`,
+            `💀 [BOSS] ${attacker.name}이 ${target.name}을(를) 구겼습니다! (-${damage})`,
+            `🔥 [BOSS] ${attacker.name}의 압도적 멘탈 분쇄! (-${damage})`
+        ];
+        return bossLogs[Math.floor(Math.random() * bossLogs.length)];
     }
 
-  else if (isRounddefeat()) {
-    // 1. 남은 카드가 있는지 확인 (0개면 진짜 게임 오버)
-    const remainingCards = document.querySelectorAll("#playerChars .char-card").length;
-
-    if (remainingCards === 0) {
-        log("❌ 카드가 없고 아군이 전멸했습니다. 게임 오버!");
-        clearInterval(interval);
-        isBattleRunning = false;
-        gameOver(); // 최종 패배 함수 호출
-        return;
-    } else {
-        // 2. 카드가 남아있다면 기존처럼 라운드 패배 처리
-        log(`스테이지 ${currentRound} 패배! 남은 카드로 재정비하세요.`);
-        clearInterval(interval);
-        isBattleRunning = false;
-        currentRound++; // 혹은 필요에 따라 라운드 증가를 제어하세요
-        log(`전투가 멈췄습니다. 카드를 배치하고 다시 '전투 시작'을 누르세요.`);
-        return;
+    if (isCrit) {
+        const critLogs = [
+            `🎯 [CRIT] 명치에 죽빵! (-${damage})`,
+            `🔥 [CRIT] 꿀밤 한 대가 핵폭탄급! (-${damage})`,
+            `⚡ [CRIT] ${attacker.name}의 물리치료! (-${damage})`,
+            `💥 [CRIT] 조상님 뵙고 왔습니다! (-${damage})`
+        ];
+        return critLogs[Math.floor(Math.random() * critLogs.length)];
     }
+
+    if (isUR) {
+        const urLogs = [
+            `✨ [UR] 자본주의의 매운맛! (-${damage})`,
+            `🌟 [UR] ${attacker.name}의 광채 쇼! (-${damage})`,
+            `🔱 [UR] 신화급 참교육 시전! (-${damage})`
+        ];
+        return urLogs[Math.floor(Math.random() * urLogs.length)];
+    }
+
+    const normalLogs = [
+        `🥊 ${attacker.name}의 등짝 스매시! (-${damage})`,
+        `💥 ${attacker.name}의 뚝배기 브레이커! (-${damage})`,
+        `⚔️ ${attacker.name}: "아프냐? 나도 아프다." (-${damage})`,
+        `🚀 ${attacker.name}의 탄막 세례! (-${damage})`,
+        `🐾 ${attacker.name}이 발가락을 밟았다! (-${damage})`
+    ];
+    return normalLogs[Math.floor(Math.random() * normalLogs.length)];
 }
 
 
 
 
-    round++;
-  }
-  
-  
-  ,1000);
+// =========================================================================
+// [4단계] 라운드 승리 보상 부여 및 교체(Inventory 스왑) 처리 알고리즘
+// =========================================================================
+function showRoundRewards() {
+    const overlay = document.getElementById("roundRewardOverlay");
+    const container = document.getElementById("roundRewardContainer");
+    container.innerHTML = "";
+    
+    // 3개의 랜덤 보상 카드 생성
+    const picks = [getRandomBadge(), getRandomBadge(), getRandomBadge()];
+    
+    picks.forEach((badge, index) => {
+        const card = document.createElement("div");
+        card.className = "reward-card badge-back"; // 처음엔 물음표 뒤집힌 상태
+   
+        card.innerHTML = `
+            <h3 class="question-mark">?</h3>
+            <div class="info">
+                <span style="color:${badge.color}; font-size:0.8rem; font-weight:bold;">[${badge.grade}]</span>
+                
+                <h3 style="margin: 5px 0;">
+                    <span style="color: ${badge.isPassive ? '#60a5fa' : '#f87171'}; font-size:0.85rem;">
+                        [${badge.isPassive ? '영구 패시브' : '즉시 발동'}]
+                    </span> 
+                    ${badge.name}
+                </h3>
+                
+                <p>${badge.desc}</p>
+            </div>
+        `;
+        
+        card.onclick = () => {
+            // 중복 클릭 및 연출 도중 다른 카드 클릭 방지 락(Lock)
+            if (card.classList.contains("revealed") || container.classList.contains("selected-done")) return;
+            container.classList.add("selected-done");
+            
+            // 1️⃣ [내가 고른 카드]를 먼저 앞면으로 싹 뒤집습니다.
+            revealCard(card, badge);
+            card.style.borderWidth = "3px"; // 내가 선택한 카드 두껍게 강조
+            
+            // 2️⃣ 0.8초 뒤, 고르지 않은 [옆 카드 2개]도 뒤집어서 보여줍니다. (구경용)
+            setTimeout(() => {
+                const allCards = container.querySelectorAll(".reward-card");
+                allCards.forEach((c, i) => {
+                    if (i !== index) {
+                        revealCard(c, picks[i]);
+                        c.style.opacity = "0.5"; // 안 고른 카드는 흐리게 해서 구경만 시킴
+                    }
+                });
+                
+                // 3️⃣ 구경이 끝난 1.5초 뒤, 보상 창을 닫고 인벤토리 처리로 라우팅합니다.
+                setTimeout(() => {
+                    overlay.style.display = "none"; // 보상 창 완전히 닫기
+                    container.classList.remove("selected-done"); // 락 해제
+                    
+                    // 🔥 [핵심] 내가 고른 배지 데이터만 가방 검사(3칸 체크)로 넘깁니다!
+                    tryAddBadge(badge, proceedToNextRound); 
+                }, 1500);
+                
+            }, 800);
+        };
+        container.appendChild(card);
+    });
+    overlay.style.display = "flex";
+}
 
+async function tryAddBadge(newBadge, onComplete) {
+    // 1️⃣ [추가] 만약 패시브가 아닌 일회성 즉시 발동 카드라면?
+    if (newBadge.isPassive === false) {
+        applyInstantBadgeEffect(newBadge); // 효과만 즉시 실행하고
+        log(`⚡ 즉시 발동형 보상 적용 완료: ${newBadge.name}`);
+        if (onComplete) onComplete();       // 가방 안 넣고 바로 다음 라운드로 진행!
+        return; 
+    }
 
+    // 2️⃣ 기존의 패시브 가방 저장 로직 (3칸 체크)
+    if (playerBadges.length < MAX_BADGE_SLOTS) {
+        playerBadges.push(newBadge);   
+        updateBadgeUI();                
+        applyInstantBadgeEffect(newBadge); 
+        log(`🎒 패시브 배지 장착 완료: ${newBadge.name}`);
+        if (onComplete) onComplete();
+    } else {
+        openExchangeOverlay(newBadge, onComplete); 
+    }
+}
 
+// =========================================================================
+// [패시브 해제] 배지 파괴/교체 시 적용되어 있던 실시간 효과를 회수하는 함수
+// =========================================================================
+function removePassiveEffect(badge) {
+    if (!badge || !badge.isPassive) return; // 패시브가 아니면 실행 안 함
+
+    log(`🗑️ [패시브 파괴] '${badge.name}' 배지가 파괴되어 효과가 소멸합니다.`);
+
+    if (badge.type === "bullet" && badge.grade === "Rare") {
+        log(`✨ [영구 누적] 공포의 '${badge.name}'(레어) 아군의 공격력에 영구히 흡수되었습니다!`);
+    } else {
+        log(`🗑️ [패시브 파괴] '${badge.name}' 배지가 파괴되어 효과가 소멸합니다.`);
+    }
+
+    switch (badge.type) {
+         case "bullet":
+            // ✨ [핵심 로직] 레어 등급 불릿은 원상복구(나누기)를 건너뜁니다!
+            if (badge.grade === "Rare") {
+                // 아무것도 하지 않고 break -> GLOBAL_ATK_MULT 배율이 깎이지 않고 그대로 유지됨!
+                break;
+            }
+
+            // 💥 일반 등급 불릿들은 기존처럼 회수 (원래대로 나누기)
+            if (typeof GLOBAL_ATK_MULT !== 'undefined') {
+                GLOBAL_ATK_MULT /= badge.value; 
+                log(`⚔️ [버프 회수] 일반 불릿이 회수되어 총 공격력 배율이 [${GLOBAL_ATK_MULT.toFixed(2)}배]가 되었습니다.`);
+            }
+            break;
+
+        case "range":
+            // 💥 아군 공격 사거리 +1칸 회수
+            if (typeof GLOBAL_RANGE_BONUS !== 'undefined') {
+                GLOBAL_RANGE_BONUS -= badge.value;
+            }
+            break;
+
+        case "shield":
+            // 💥 피해량 30% 감소 효과 제거
+            if (typeof GLOBAL_DAMAGE_REDUCTION !== 'undefined') {
+                GLOBAL_DAMAGE_REDUCTION -= 0.3; // 0.7(30%감소) 받았던 걸 원상복구
+            }
+            break;
+
+        case "crit":
+            // 💥 치명타 확률 회수
+            if (typeof GLOBAL_CRIT_CHANCE !== 'undefined') {
+                GLOBAL_CRIT_CHANCE -= badge.value;
+            }
+            break;
+
+        case "slow":
+            // 💥 적 불발 확률 회수
+            if (typeof ENEMY_SLOW_CHANCE !== 'undefined') {
+                ENEMY_SLOW_CHANCE -= badge.value;
+            }
+            break;
+
+        case "speed":
+            // 💥 이동 보너스 해제
+            if (typeof GLOBAL_SPEED_BONUS !== 'undefined') {
+                GLOBAL_SPEED_BONUS = false;
+            }
+            break;
+
+        case "vampire":
+            // 🦇 실시간 체크 방식이라 배열에서 빠지면 자동으로 멈추지만, 
+            // 유저에게 효과가 끝났음을 알리기 위해 로그를 남겨줍니다.
+            log(`🦇 [배지 제거] '${badge.name}' 배지가 파괴되어 이제 아군들이 흡혈을 할 수 없습니다.`);
+            break;
+    }
+    
+
+}
+function openExchangeOverlay(newBadge, onComplete) {
+    const overlay = document.getElementById("badgeExchangeOverlay");
+    const container = document.getElementById("badgeExchangeContainer");
+    container.innerHTML = `<h3 style="width:100%; margin-bottom:15px;">새로 획득한 [${newBadge.name}] 배지를 장착하기 위해 버릴 배지를 골라주세요.</h3>`;
+    
+    playerBadges.forEach((oldBadge, index) => {
+        const card = document.createElement("div");
+        card.className = "reward-card revealed";
+        card.style.borderColor = oldBadge.color;
+        card.innerHTML = `
+            <span style="color:#ef4444; font-weight:bold;">[교체 대상]</span>
+            <h3>${oldBadge.name}</h3>
+            <p>${oldBadge.desc}</p>
+        `;
+        
+        card.onclick = async () => {
+            log(`배지 스왑 완료: [${oldBadge.name}] 파괴 -> [${newBadge.name}] 장착`);
+            
+            // 🔥 [핵심 추가] 버려지는 기존 배지가 '영구 패시브(true)'였다면, 데이터를 바꾸기 전에 효과를 먼저 뺏어옵니다!
+            if (oldBadge.isPassive) {
+                removePassiveEffect(oldBadge);
+            }
+
+            playerBadges[index] = newBadge; // 데이터 스왑 (기존 자리에 새 배지 주입)
+            updateBadgeUI();
+            applyInstantBadgeEffect(newBadge); // 새 배지 효과 발동
+            
+            overlay.style.display = "none";
+            if (onComplete) onComplete();
+        };
+        container.appendChild(card);
+    });
+    
+    // 스킵 옵션 버튼 바인딩
+    const skipBtn = document.createElement("button");
+    skipBtn.innerText = "새 배지 버리고 그냥 넘어가기";
+    skipBtn.style.cssText = "margin-top:20px; padding:12px; background:#64748b; color:white; border:none; border-radius:6px; cursor:pointer;";
+    skipBtn.onclick = () => {
+        log(`획득한 보상 [${newBadge.name}] 배지를 버렸습니다.`);
+        overlay.style.display = "none";
+        if (onComplete) onComplete();
+    };
+    container.appendChild(skipBtn);
+    overlay.style.display = "flex";
+}
+
+function proceedToNextRound() {
+    currentRound++;
+    log(`다음 스테이지 ${currentRound} 준비 단계입니다. '전투 시작' 버튼을 누르세요.`);
+}
+
+// =======================================
+// [5단계] UI 연동 실시간 시각화 처리 모듈 
+// =======================================
+function updateBadgeUI() {
+    const ui = document.getElementById("badgeUI");
+    
+    // 혹시 모를 에러 방지용 안전장치
+    if (!ui) {
+        console.error("HTML에 id='badgeUI'를 가진 엘리먼트가 없습니다.");
+        return;
+    }
+    
+    ui.innerHTML = ""; // 기존 UI 초기화
+    
+    playerBadges.forEach(badge => {
+        const icon = document.createElement("div");
+        icon.className = "mini-badge";
+        icon.style.borderColor = badge.color;
+        icon.innerHTML = badge.name.substring(0, 2); // 배지 이름 앞 2글자만 노출
+        icon.title = `${badge.name} [${badge.grade}]\n${badge.desc}`; // 마우스 올리면 툴팁 노출
+        ui.appendChild(icon);
+    });
 }
 
 
