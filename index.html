@@ -1318,9 +1318,9 @@ async function prepareRound(round) {
         spawnCount = 1;
         enemyName = `👑👑 [WORLD BOSS] 초 미소녀 멘헤라 애리 Lv.${round}`;
         
-        if (round >= 75) { hp = (8000 + (round * 3000)) * 8; atk = (500 + (round * 400)) * 5; }
-        else if (round >= 48) { hp = (4000 + (round * 2000)) * 6; atk = (100 + (round * 200)) * 3; }
-        else { hp = (4000 + (round * 2000)) * 4; atk = (100 + (round * 150)) * 2; }
+        if (round >= 75) { hp = (8000 + (round * 3000)) * 8; atk = (5000 + (round * 400)) * 10; }
+        else if (round >= 48) { hp = (4000 + (round * 2000)) * 6; atk = (1000 + (round * 200)) * 5; }
+        else { hp = (4000 + (round * 2000)) * 4; atk = (1000 + (round * 150)) * 3; }
         
         range = 4;
         enemyImg = (enemyMaster.cards.find(c => c.grade.toUpperCase() === "UR") || 
@@ -1337,9 +1337,9 @@ async function prepareRound(round) {
         
         enemyName = `오염된 밤티 애리 Lv.${round}`;
         
-        if (round >= 80) { hp = 1000 + (round * 1500); atk = 100 + (round * 400); }
-        else if (round >= 40) { hp = 500 + (round * 800); atk = 50 + (round * 200); }
-        else { hp = 500 + (round * 500); atk = 50 + (round * 100); }
+        if (round >= 80) { hp = 1000 + (round * 1500); atk = 1000 + (round * 400); }
+        else if (round >= 40) { hp = 500 + (round * 800); atk = 500 + (round * 200); }
+        else { hp = 500 + (round * 500); atk = 500 + (round * 100); }
         
         range = 2;
         enemyImg = nGradeImg;
