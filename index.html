@@ -918,7 +918,7 @@ function getRandomBadge() {
 // =========================================================================
 // [2단계] 게임 시작 시 초기 배지 선택 프로세스
 // =========================================================================
-function initBadgeSelection() {
+async function initBadgeSelection() {
     await wait(500); // 0.5초 대기
     const overlay = document.getElementById("badgeInitOverlay");
     const container = document.getElementById("badgeInitContainer");
@@ -1972,7 +1972,7 @@ const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // =========================================================================
 // [3단계 & 백엔드] 인게임 전투 루프 내 실시간 배지 판정 주입
 // =========================================================================
-function startBattle() {
+async function startBattle() {
     if (isBattleRunning) return;
     isBattleRunning = true;
     log("=== 전투 시작 ===");
