@@ -1561,10 +1561,10 @@ console.log("✅ 구글 시트에서 가져온 데이터:", users);
   
  if (playerUser) {
         // 2. 🔥 [분기 처리] 우리 모드 vs 일반 모드
-      if (isWooriMode) {
-    log("🎁 특별 이벤트: R등급 카드 3개를 지급합니다!");
-    
-    // 1. 모든 유저의 데이터에서 카드 모으기
+if (isWooriMode) {
+    log("🎁 특별 이벤트: R등급 3장, SR등급 2장, N등급 3장을 지급합니다!");
+
+    // 1. 전체 카드 풀 확보
     const allPossibleCards = [];
     users.forEach(user => {
         if (user.cards && Array.isArray(user.cards)) {
@@ -1572,27 +1572,38 @@ console.log("✅ 구글 시트에서 가져온 데이터:", users);
         }
     });
 
-    // 2. R등급 카드만 필터링
+    // 2. 등급별 필터링
     const rCards = allPossibleCards.filter(c => c.grade === "R");
-    
-    // 3. 🔥 R등급이 하나라도 있다면? 3개 강제 생성 (중복 허용)
-    const randomR3 = [];
-    if (rCards.length > 0) {
-        for (let i = 0; i < 3; i++) {
-            // rCards 배열에서 무작위로 하나를 뽑되, 카드가 하나면 계속 그 카드만 뽑힘
-            const randomCard = rCards[Math.floor(Math.random() * rCards.length)];
-            randomR3.push(randomCard);
+    const srCards = allPossibleCards.filter(c => c.grade === "SR");
+    const nCards = allPossibleCards.filter(c => c.grade === "N");
+
+    const awardedCards = [];
+
+    // 보상 지급 함수화
+    const drawCards = (cardPool, count, gradeName) => {
+        if (cardPool.length > 0) {
+            for (let i = 0; i < count; i++) {
+                awardedCards.push(cardPool[Math.floor(Math.random() * cardPool.length)]);
+            }
+        } else {
+            log(`⚠️ 경고: ${gradeName}등급 카드가 부족합니다!`);
         }
-    } else {
-        log("⚠️ 경고: R등급 카드가 하나도 없습니다!");
-    }
-    
-    // 4. 생성 및 전역 변수 업데이트
-    randomR3.forEach(card => {
+    };
+
+    // 3. 등급별 카드 뽑기 실행
+    drawCards(rCards, 3, "R");
+    drawCards(srCards, 2, "SR");
+    drawCards(nCards, 3, "N");
+
+    log(`🎉 보상 지급 완료: 총 ${awardedCards.length}장의 카드가 준비되었습니다.`);
+
+    // 4. 생성 및 전역 변수 업데이트 (awardedCards로 통일)
+    awardedCards.forEach(card => {
         const charDiv = createCharDiv(card);
         playerDiv.appendChild(charDiv);
     });
-    globalPlayerCards = randomR3;
+    
+    globalPlayerCards = awardedCards;
 }// [최애리 모드]
 else if (inputName === "최애리") {
     log("👤 '최애리'님 환영합니다! '최강'의 덱을 불러옵니다.");
@@ -1659,23 +1670,39 @@ else if (inputName === "최애리") {
     loadBtn.style.backgroundColor = "#e2e8f0";
     loadBtn.style.cursor = "not-allowed";
 
-  }else  {
-    log("자비로운 애리가 R등급 카드 2개를 지급합니다.");
+  }else {
+    log("자비로운 애리가 R등급 2개, SR등급 1개, N등급 4개를 지급합니다.");
     
-    // 전체 카드 풀에서 R등급 2개만 뽑기
+    // 1. 전체 카드 풀 확보 및 등급별 분류
     const allPossibleCards = users.flatMap(u => u.cards || []);
     const rCards = allPossibleCards.filter(c => c.grade === "R");
+    const srCards = allPossibleCards.filter(c => c.grade === "SR");
+    const nCards = allPossibleCards.filter(c => c.grade === "N");
     
-    const randomR2 = [];
-    if (rCards.length > 0) {
-        for (let i = 0; i < 2; i++) { // 2개만 생성
-            randomR2.push(rCards[Math.floor(Math.random() * rCards.length)]);
+    const awardedCards = [];
+
+    // 2. 무작위 추출 함수 (코드 중복 방지)
+    const drawCards = (pool, count, gradeName) => {
+        if (pool.length > 0) {
+            for (let i = 0; i < count; i++) {
+                awardedCards.push(pool[Math.floor(Math.random() * pool.length)]);
+            }
+        } else {
+            log(`⚠️ 경고: ${gradeName} 등급 카드가 부족하여 지급하지 못했습니다.`);
         }
-    }
+    };
+
+    // 3. 각각 개수만큼 추출
+    drawCards(rCards, 2, "R");
+    drawCards(srCards, 1, "SR");
+    drawCards(nCards, 4, "N");
     
-    randomR2.forEach(card => playerDiv.appendChild(createCharDiv(card)));
-    globalPlayerCards = randomR2;
- }
+    // 4. 화면 생성 및 전역 변수 업데이트
+    awardedCards.forEach(card => {
+        playerDiv.appendChild(createCharDiv(card));
+    });
+    globalPlayerCards = awardedCards;
+}
 }
 
 // 캐릭터 DOM 생성 함수
