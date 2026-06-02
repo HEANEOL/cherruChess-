@@ -920,8 +920,8 @@ const badgePool = [
    { id: 13, name: "차원균열", type: "refill", value: 1, grade: "Epic", color: "#a855f7", desc: "차원을 넘어 애리를 소환합니다.", isPassive: false },
      { id: 14, name: "난사!!!!!!!!!!", type: "bullet", value: 2.0, grade: "Legendary", color: "#eab308", desc: "아군 실시간 공격력 2.0배", isPassive: true },
     { id: 15, name: "UR의 축복", type: "gradeUp", value: 1, grade: "Legendary", color: "#eab308", desc: "랜덤 아군 1명 최고등급(UR) 진화", isPassive: false },
-     { id: 16, name: "애리의 품", type: "shield", value: 0.5, grade: "Legendary", color: "#eab308", desc: "아군이 받는 피해량 50% 감소", isPassive: true },
-     {  id: 17,   name: "정기흡수", type: "vampire",value: 0.1, grade: "Legendary", color: "#eab308",  desc: "아군이 공격할 때마다 가한 피해량의 10%를 흡혈하여 체력 회복", isPassive: true }
+     { id: 16, name: "애리의 품", type: "shield", value: 0.6, grade: "Legendary", color: "#eab308", desc: "아군이 받는 피해량 40% 감소", isPassive: true },
+     {  id: 17,   name: "정기흡수", type: "vampire",value: 0.03, grade: "Legendary", color: "#eab308",  desc: "아군이 공격할 때마다 가한 피해량의 3%를 흡혈하여 체력 회복", isPassive: true }
 ];
 
 // 등급별 가중치 확률 추출기 (Common: 50%, Rare: 30%, Epic: 15%, Legendary: 5%)
@@ -2222,12 +2222,18 @@ async function startBattle() {
                 
                 // 🔥 [백엔드 주입 4] 방어막 전개 (아군이 최종 피격 시 데미지 30% 감쇄 연산)
                 let enemyDamage = eCurrent.atk;
-                const shieldBadge = playerBadges.find(b => b.type === "shield");
-                if (shieldBadge) {
-                    enemyDamage = Math.max(1, Math.floor(enemyDamage * shieldBadge.value));
-                }
-
-                target.hp = Math.max(0, target.hp - enemyDamage);
+                   // 1. 방어 배지들을 모두 찾습니다.
+            const shieldBadges = playerBadges.filter(b => b.type === "shield");
+            
+            if (shieldBadges.length > 0) {
+                // 2. [점감 공식] 각 배지의 (1 - value)를 계속 곱하여 최종 배율을 계산합니다.
+                // 예: value가 0.5라면 (1 - 0.5) = 0.5씩 곱해짐
+                const totalMultiplier = shieldBadges.reduce((acc, b) => acc * (1 - b.value), 1.0);
+                
+                // 3. 최종 대미지 적용 (소수점 버림, 최소 대미지 1)
+                enemyDamage = Math.max(1, Math.floor(enemyDamage * totalMultiplier));
+            
+                            target.hp = Math.max(0, target.hp - enemyDamage);
                 
                 const targetCell = document.querySelector(`[data-char*='"uniqueId":"${target.uniqueId}"']`);
                 if (targetCell) {
