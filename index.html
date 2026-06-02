@@ -944,6 +944,15 @@ function getRandomBadge() {
         : badgePool[0]; // 혹시라도 없으면 1번 배지 반환
 }
 
+    function getBossRewardBadge() {
+    // 1. 보스 보상은 Epic(70%) + Legendary(30%)로 구성
+    const rand = Math.random() * 100;
+    let targetGrade = rand < 70 ? "Epic" : "Legendary";
+    
+    const filtered = badgePool.filter(b => b.grade === targetGrade);
+    return filtered[Math.floor(Math.random() * filtered.length)];
+}
+
 // =========================================================================
 // [2단계] 게임 시작 시 초기 배지 선택 프로세스
 // =========================================================================
@@ -2269,9 +2278,12 @@ function showRoundRewards() {
     const overlay = document.getElementById("roundRewardOverlay");
     const container = document.getElementById("roundRewardContainer");
     container.innerHTML = "";
-    
-    // 3개의 랜덤 보상 카드 생성
-    const picks = [getRandomBadge(), getRandomBadge(), getRandomBadge()];
+// 🔥 [수정] 보스 라운드라면 보스 전용 확률(Epic+), 아니면 일반 랜덤
+    const picks = isBossRound 
+        ? [getBossRewardBadge(), getBossRewardBadge(), getBossRewardBadge()] 
+        : [getRandomBadge(), getRandomBadge(), getRandomBadge()];
+
+  
     
     picks.forEach((badge, index) => {
         const card = document.createElement("div");
