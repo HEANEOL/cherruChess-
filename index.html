@@ -2254,7 +2254,7 @@ async function startBattle() {
                 
                 // 3. 최종 대미지 적용 (소수점 버림, 최소 대미지 1)
                 enemyDamage = Math.max(1, Math.floor(enemyDamage * totalMultiplier));
-            
+                }
                             target.hp = Math.max(0, target.hp - enemyDamage);
                 
                 const targetCell = document.querySelector(`[data-char*='"uniqueId":"${target.uniqueId}"']`);
