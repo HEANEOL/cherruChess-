@@ -907,27 +907,27 @@ const MAX_BADGE_SLOTS = 3;
 
 // 10종의 배지 데이터 베이스 (등급별 확률 가중치 반영용)
 const badgePool = [
-    { id: 1, name: "체력 회복", type: "hp", value: 5000, grade: "Common", color: "#94a3b8", desc: "모든 아군 체력 회복 및 한도 +5000", isPassive: false },
+    { id: 1, name: "체력 회복", type: "hp", value: 5000, grade: "Common", color: "#94a3b8", desc: "모든 아군 체력 회복 및 한도 +5000", isPassive: "true" },
     { id: 2, name: "방패", type: "shield", value: 0.1, grade: "Common", color: "#94a3b8", desc: "아군이 받는 피해량 10% 감소", isPassive: true },
     { id: 3, name: "총알 닦기", type: "bullet", value: 1.1, grade: "Common", color: "#94a3b8", desc: "아군 실시간 공격력 1.1배", isPassive: false },
   
-    { id: 4, name: "애리 보충", type: "refill", value: 1, grade: "Rare", color: "#3b82f6", desc: "대기열에 새 애리 카드 보충", isPassive: false }, 
+    { id: 4, name: "애리 교환", type: "refill", value: 1, grade: "Rare", color: "#3b82f6", desc: "대기열에 새 애리 카드 교환", isPassive: false }, 
     { id: 5, name: "탄막 강화", type: "bullet", value: 1.2, grade: "Rare", color: "#3b82f6", desc: "아군 실시간 공격력 1.2배", isPassive: false },
     { id: 6, name: "사거리 증폭", type: "range", value: 1, grade: "Rare", color: "#3b82f6", desc: "아군 공격 사거리 +1칸", isPassive: true },
     { id: 7, name: "신속 이동", type: "speed", value: 1, grade: "Rare", color: "#3b82f6", desc: "아군 이동 시 연속 2칸 이동", isPassive: true },
-   { id: 8, name: "코스트 회복", type: "cost", value: 2, grade: "Epic", color: "#a855f7", desc: "최대 코스트 한도 +1", isPassive: false },
+   { id: 8, name: "코스트 회복", type: "cost", value: 1, grade: "Epic", color: "#a855f7", desc: "최대 코스트 한도 +1", isPassive: false },
     { id: 9, name: "방어막 전개", type: "shield", value: 0.3, grade: "Epic", color: "#a855f7", desc: "아군이 받는 피해량 30% 감소", isPassive: true },
     { id: 10, name: "치명적 탄막", type: "crit", value: 0.2, grade: "Epic", color: "#a855f7", desc: "공격 시 20% 확률로 2배 피해", isPassive: true },
-    { id: 11, name: "탄막 초강화", type: "bullet", value: 1.5, grade: "Epic", color: "#a855f7", desc: "아군 실시간 공격력 1.5배", isPassive: true },
+    { id: 11, name: "탄막 초강화", type: "bullet", value: 1.4, grade: "Epic", color: "#a855f7", desc: "아군 실시간 공격력 1.4배", isPassive: true },
     { id: 12, name: "시간 정지", type: "slow", value: 0.3, grade: "Epic", color: "#a855f7", desc: "적 행동 시 30% 확률로 행동 불발", isPassive: true },
    { id: 13, name: "차원균열", type: "refill", value: 1, grade: "Epic", color: "#a855f7", desc: "차원을 넘어 애리를 소환합니다.", isPassive: false },
-     { id: 14, name: "난사!!!!!!!!!!", type: "bullet", value: 2.0, grade: "Legendary", color: "#eab308", desc: "아군 실시간 공격력 2.0배", isPassive: true },
+     { id: 14, name: "난사!!!!!!!!!!", type: "bullet", value: 1.8, grade: "Legendary", color: "#eab308", desc: "아군 실시간 공격력 1.8배", isPassive: true },
     { id: 15, name: "UR의 축복", type: "gradeUp", value: 1, grade: "Legendary", color: "#eab308", desc: "랜덤 아군 1명 최고등급(UR) 진화", isPassive: false },
      { id: 16, name: "애리의 품", type: "shield", value: 0.4, grade: "Legendary", color: "#eab308", desc: "아군이 받는 피해량 40% 감소", isPassive: true },
-     {  id: 17,   name: "정기흡수", type: "vampire",value: 0.03, grade: "Legendary", color: "#eab308",  desc: "아군이 공격할 때마다 가한 피해량의 3%를 흡혈하여 체력 회복", isPassive: true }
+     {  id: 17,   name: "정기흡수", type: "vampire",value: 0.01, grade: "Legendary", color: "#eab308",  desc: "아군이 공격할 때마다 가한 피해량의 1%를 흡혈하여 체력 회복", isPassive: true }
 ];
 
-// 등급별 가중치 확률 추출기 (Common: 50%, Rare: 30%, Epic: 15%, Legendary: 5%)
+// 등급별 가중치 확률 추출기 (Common: 50%, Rare: 30%, Epic: 15%, Legendary: 3%)
 function getRandomBadge() {
     const rand = Math.random() * 100;
     
@@ -937,7 +937,7 @@ function getRandomBadge() {
     // 95~100: Legendary (5%)
     let targetGrade = rand < 50 ? "Common" : 
                       rand < 80 ? "Rare" : 
-                      rand < 95 ? "Epic" : "Legendary";
+                      rand < 97 ? "Epic" : "Legendary";
                       
     const filtered = badgePool.filter(b => b.grade === targetGrade);
     
@@ -950,7 +950,7 @@ function getRandomBadge() {
     function getBossRewardBadge() {
     // 1. 보스 보상은 Epic(70%) + Legendary(30%)로 구성
     const rand = Math.random() * 100;
-    let targetGrade = rand < 70 ? "Epic" : "Legendary";
+    let targetGrade = rand < 80 ? "Epic" : "Legendary";
     
     const filtered = badgePool.filter(b => b.grade === targetGrade);
     return filtered[Math.floor(Math.random() * filtered.length)];
@@ -961,6 +961,7 @@ function getRandomBadge() {
 // =========================================================================
 async function initBadgeSelection() {
     await wait(500); // 0.5초 대기
+     playerBadges = [];    
     const overlay = document.getElementById("badgeInitOverlay");
     const container = document.getElementById("badgeInitContainer");
     container.innerHTML = "";
@@ -1318,9 +1319,20 @@ async function prepareRound(round) {
         spawnCount = 1;
         enemyName = `👑👑 [WORLD BOSS] 초 미소녀 멘헤라 애리 Lv.${round}`;
         
-        if (round >= 75) { hp = (8000 + (round * 3000)) * 8; atk = (5000 + (round * 400)) * 10; }
-        else if (round >= 48) { hp = (4000 + (round * 2000)) * 6; atk = (1000 + (round * 200)) * 5; }
-        else { hp = (4000 + (round * 2000)) * 4; atk = (1000 + (round * 150)) * 3; }
+  // 50라운드 종착역을 향한 급격한 스탯 상승
+        if (round >= 40) { 
+            hp = (8000 + (round * 4000)) * 8; // 후반 보스 체력 강화
+            atk = (5000 + (round * 600)) * 10; 
+          swapPlayerCard(3);
+        }
+        else if (round >= 20) { 
+            hp = (4000 + (round * 2500)) * 6; 
+            atk = (1000 + (round * 300)) * 5; 
+        }
+        else { 
+            hp = (4000 + (round * 2000)) * 4; 
+            atk = (1000 + (round * 200)) * 3; 
+        }
         
         range = 4;
         enemyImg = (enemyMaster.cards.find(c => c.grade.toUpperCase() === "UR") || 
@@ -1337,9 +1349,19 @@ async function prepareRound(round) {
         
         enemyName = `오염된 밤티 애리 Lv.${round}`;
         
-        if (round >= 80) { hp = 1000 + (round * 1500); atk = 1000 + (round * 400); }
-        else if (round >= 40) { hp = 500 + (round * 800); atk = 500 + (round * 200); }
-        else { hp = 500 + (round * 500); atk = 500 + (round * 100); }
+// 50라운드 기준으로 구간 조정
+        if (round >= 35) { 
+            hp = 2000 + (round * 2000); // 35라운드 이후 급격히 단단해짐
+            atk = 2000 + (round * 500); 
+        }
+        else if (round >= 15) { 
+            hp = 1000 + (round * 1000); 
+            atk = 1000 + (round * 300); 
+        }
+        else { 
+            hp = 500 + (round * 600); 
+            atk = 500 + (round * 150); 
+        }
         
         range = 2;
         enemyImg = nGradeImg;
@@ -1883,35 +1905,65 @@ function removeSpecificChar(uniqueId) {
 
 
 
-// =========================================================================
-// [실시간 보충] 내 카드 뭉치에서 랜덤으로 카드를 뽑아 화면에 추가 배치
-// =========================================================================
-function refillPlayerCard(amount = 1) {
-    const playerDiv = document.getElementById("playerChars");
-    if (!playerDiv) return;
+/**
+ * 지정된 등급(N, R, SR, SSR, UR)의 카드만 교체 풀에 포함합니다.
+ */
+async function swapPlayerCard(amount = 1) {
+    const container = document.getElementById("playerChars");
+    if (!container || container.children.length === 0) return;
 
-    // 안전장치: 구글 시트 조회를 아직 안 했거나 카드가 없는 경우
-    if (!globalPlayerCards || globalPlayerCards.length === 0) {
-        log("⚠️ 구글 시트에서 캐릭터 데이터를 먼저 불러와야 카드를 보충할 수 있습니다!");
-        return;
-    }
+    try {
+        const users = await fetchSheetData();
+        if (!users) return;
 
-    for (let i = 0; i < amount; i++) {
-        // 1. 내 카드 풀(배열)에서 랜덤으로 인덱스 하나 추출
-        const randomIndex = Math.floor(Math.random() * globalPlayerCards.length);
-        const randomCard = globalPlayerCards[randomIndex];
+        // 1. [필터링 핵심] 유저 카드 통합 후, 유효한 등급만 남기기
+        const allowedGrades = ["N", "R", "SR", "SSR", "UR"];
+        const allCardsPool = users
+            .flatMap(u => u.cards || [])
+            .filter(c => c.grade && allowedGrades.includes(c.grade.toUpperCase()));
 
-        // 2. 이미 짜놓으신 [훌륭한 DOM 생성 함수]를 그대로 재활용하여 카드 생성!
-        const newCharDiv = createCharDiv(randomCard);
-        
-        // 3. innerHTML = "" 로 지우지 않고, appendChild를 통해 기존 카드들 옆에 슬쩍 '보충'합니다.
-        playerDiv.appendChild(newCharDiv);
-        
-        log(`🔄 [카드 충전] 덱에 [${randomCard.grade}] ${randomCard.name} 카드가 추가되었습니다!`);
+        if (allCardsPool.length === 0) {
+            log("⚠️ 교체 가능한 등급의 카드가 서버에 없습니다.");
+            return;
+        }
+
+        for (let i = 0; i < amount; i++) {
+            const children = container.children;
+            const randomIndex = Math.floor(Math.random() * children.length);
+            const targetElement = children[randomIndex];
+            
+            const targetAtk = parseInt(targetElement.dataset.atk, 10);
+            const targetCard = globalPlayerCards.find(c => {
+                let mult = 0.5;
+                const g = c.grade.toUpperCase();
+                if (g === "SR") mult = 0.65;
+                if (g === "UR") mult = 1.2;
+                return Math.floor(c.power * mult) === targetAtk;
+            });
+
+            if (!targetCard) continue;
+
+            // 2. [필터링된 풀]에서 랜덤하게 교체용 카드 추출
+            const newCardData = allCardsPool[Math.floor(Math.random() * allCardsPool.length)];
+
+            Object.assign(targetCard, {
+                name: newCardData.name,
+                grade: newCardData.grade,
+                power: newCardData.power,
+                hp: newCardData.hp,
+                maxHp: newCardData.hp,
+                img: newCardData.img
+            });
+
+            const newCardDiv = createCharDiv(targetCard);
+            container.replaceChild(newCardDiv, targetElement);
+            
+            log(`🔄 [카드 교환] '${targetElement.dataset.name}' -> [${newCardData.grade}] ${newCardData.name}`);
+        }
+    } catch (err) {
+        console.error("교체 로직 오류:", err);
     }
 }
-
-
 
 
 
@@ -2039,7 +2091,7 @@ case "refill":
     } else {
         // [일반 보충 로직]
         log("🔄 [배지 즉시발동] 소환 대기 리스트에 새로운 캐릭터 카드가 추가 배치됩니다.");
-        refillPlayerCard(1);
+        swapPlayerCard(1);
     }
     break;
 
@@ -2113,7 +2165,16 @@ case "refill":
     }
     break;
             case "bullet":
-            GLOBAL_ATK_MULT *= badge.value; // 기존 배율에 새 배지 배수를 곱함 (예: 1.0 * 1.5 = 1.5)
+                    badges.forEach(badge => {
+                // 전설(Legendary)과 에픽(Epic)은 곱연산
+                if (badge.grade === "Legendary" || badge.grade === "Epic") {
+                    GLOBAL_ATK_MULT *= badge.value;
+                } 
+                // 그 이하(Common, Rare)는 단리(합연산)
+                else {
+                    GLOBAL_ATK_MULT += (badge.value - 1);
+                }
+            });
         
           log(`⚔️ [배지 즉시발동] '${badge.name}'(${badge.grade}) 효과로 총 공격력 배율이 [${GLOBAL_ATK_MULT.toFixed(2)}배]가 되었습니다.`);
             break;  
@@ -2330,7 +2391,7 @@ async function startBattle() {
             log(`🎉 스테이지 ${currentRound} 클리어 성공!`);
 
                       // 클리어 후 100라운드 초과 여부 체크
-                if (currentRound >= 100) {
+                if (currentRound >= 50) {
                     gameClear();
                     return;
                 }
@@ -2524,7 +2585,7 @@ function removePassiveEffect(badge) {
     log(`🗑️ [패시브 파괴] '${badge.name}' 배지가 파괴되어 효과가 소멸합니다.`);
 
     if (badge.type === "bullet" && badge.grade === "Rare") {
-        log(`✨ [영구 누적] 공포의 '${badge.name}'(레어) 아군의 공격력에 영구히 흡수되었습니다!`);
+        log(`✨ [영구 누적] '${badge.name}'(레어) 아군의 공격력에 영구히 흡수되었습니다!`);
     } else {
         log(`🗑️ [패시브 파괴] '${badge.name}' 배지가 파괴되어 효과가 소멸합니다.`);
     }
