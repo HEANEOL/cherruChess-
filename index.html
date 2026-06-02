@@ -908,7 +908,7 @@ const MAX_BADGE_SLOTS = 3;
 // 10종의 배지 데이터 베이스 (등급별 확률 가중치 반영용)
 const badgePool = [
     { id: 1, name: "체력 회복", type: "hp", value: 5000, grade: "Common", color: "#94a3b8", desc: "모든 아군 체력 회복 및 한도 +5000", isPassive: false },
-    { id: 2, name: "방패", type: "shield", value: 0.9, grade: "Common", color: "#94a3b8", desc: "아군이 받는 피해량 10% 감소", isPassive: true },
+    { id: 2, name: "방패", type: "shield", value: 0.1, grade: "Common", color: "#94a3b8", desc: "아군이 받는 피해량 10% 감소", isPassive: true },
     { id: 3, name: "총알 닦기", type: "bullet", value: 1.1, grade: "Common", color: "#94a3b8", desc: "아군 실시간 공격력 1.1배", isPassive: false },
   
     { id: 4, name: "애리 보충", type: "refill", value: 1, grade: "Rare", color: "#3b82f6", desc: "대기열에 새 애리 카드 보충", isPassive: false }, 
@@ -916,14 +916,14 @@ const badgePool = [
     { id: 6, name: "사거리 증폭", type: "range", value: 1, grade: "Rare", color: "#3b82f6", desc: "아군 공격 사거리 +1칸", isPassive: true },
     { id: 7, name: "신속 이동", type: "speed", value: 1, grade: "Rare", color: "#3b82f6", desc: "아군 이동 시 연속 2칸 이동", isPassive: true },
    { id: 8, name: "코스트 회복", type: "cost", value: 2, grade: "Epic", color: "#a855f7", desc: "최대 코스트 한도 +1", isPassive: false },
-    { id: 9, name: "방어막 전개", type: "shield", value: 0.7, grade: "Epic", color: "#a855f7", desc: "아군이 받는 피해량 30% 감소", isPassive: true },
+    { id: 9, name: "방어막 전개", type: "shield", value: 0.3, grade: "Epic", color: "#a855f7", desc: "아군이 받는 피해량 30% 감소", isPassive: true },
     { id: 10, name: "치명적 탄막", type: "crit", value: 0.2, grade: "Epic", color: "#a855f7", desc: "공격 시 20% 확률로 2배 피해", isPassive: true },
     { id: 11, name: "탄막 초강화", type: "bullet", value: 1.5, grade: "Epic", color: "#a855f7", desc: "아군 실시간 공격력 1.5배", isPassive: true },
     { id: 12, name: "시간 정지", type: "slow", value: 0.3, grade: "Epic", color: "#a855f7", desc: "적 행동 시 30% 확률로 행동 불발", isPassive: true },
    { id: 13, name: "차원균열", type: "refill", value: 1, grade: "Epic", color: "#a855f7", desc: "차원을 넘어 애리를 소환합니다.", isPassive: false },
      { id: 14, name: "난사!!!!!!!!!!", type: "bullet", value: 2.0, grade: "Legendary", color: "#eab308", desc: "아군 실시간 공격력 2.0배", isPassive: true },
     { id: 15, name: "UR의 축복", type: "gradeUp", value: 1, grade: "Legendary", color: "#eab308", desc: "랜덤 아군 1명 최고등급(UR) 진화", isPassive: false },
-     { id: 16, name: "애리의 품", type: "shield", value: 0.6, grade: "Legendary", color: "#eab308", desc: "아군이 받는 피해량 40% 감소", isPassive: true },
+     { id: 16, name: "애리의 품", type: "shield", value: 0.4, grade: "Legendary", color: "#eab308", desc: "아군이 받는 피해량 40% 감소", isPassive: true },
      {  id: 17,   name: "정기흡수", type: "vampire",value: 0.03, grade: "Legendary", color: "#eab308",  desc: "아군이 공격할 때마다 가한 피해량의 3%를 흡혈하여 체력 회복", isPassive: true }
 ];
 
