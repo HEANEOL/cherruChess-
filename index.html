@@ -876,29 +876,43 @@ const MAX_BADGE_SLOTS = 3;
 // 10종의 배지 데이터 베이스 (등급별 확률 가중치 반영용)
 const badgePool = [
     { id: 1, name: "체력 회복", type: "hp", value: 5000, grade: "Common", color: "#94a3b8", desc: "모든 아군 체력 회복 및 한도 +5000", isPassive: false },
-    { id: 2, name: "코스트 회복", type: "cost", value: 2, grade: "Epic", color: "#a855f7", desc: "최대 코스트 한도 +2", isPassive: false },
-    // 🔥 3번 카드는 일회성 소비형이므로 isPassive: false
-    { id: 3, name: "애리 보충", type: "refill", value: 1, grade: "Common", color: "#94a3b8", desc: "대기열에 새 애리 카드 보충", isPassive: false }, 
-    { id: 4, name: "탄막 강화", type: "bullet", value: 1.2, grade: "Rare", color: "#3b82f6", desc: "아군 실시간 공격력 1.2배", isPassive: false },
-    { id: 5, name: "사거리 증폭", type: "range", value: 1, grade: "Rare", color: "#3b82f6", desc: "아군 공격 사거리 +1칸", isPassive: true },
-    { id: 6, name: "신속 이동", type: "speed", value: 1, grade: "Rare", color: "#3b82f6", desc: "아군 이동 시 연속 2칸 이동", isPassive: true },
-    { id: 7, name: "방어막 전개", type: "shield", value: 0.7, grade: "Epic", color: "#a855f7", desc: "아군이 받는 피해량 30% 감소", isPassive: true },
-    { id: 8, name: "치명적 탄막", type: "crit", value: 0.2, grade: "Epic", color: "#a855f7", desc: "공격 시 20% 확률로 2배 피해", isPassive: true },
-    { id: 9, name: "탄막 초강화", type: "bullet", value: 1.5, grade: "Epic", color: "#a855f7", desc: "아군 실시간 공격력 1.5배", isPassive: true },
-    { id: 10, name: "시간 정지", type: "slow", value: 0.3, grade: "Epic", color: "#a855f7", desc: "적 행동 시 30% 확률로 행동 불발", isPassive: true },
-    // 🔥 12번 카드도 일회성 소비형이므로 isPassive: false
-     { id: 11, name: "난사!!!!!!!!!!", type: "bullet", value: 2.0, grade: "Legendary", color: "#eab308", desc: "아군 실시간 공격력 2.0배", isPassive: true },
-    { id: 12, name: "UR의 축복", type: "gradeUp", value: 1, grade: "Legendary", color: "#eab308", desc: "랜덤 아군 1명 최고등급(UR) 진화", isPassive: false },
-     { id: 13, name: "애리의 품", type: "shield", value: 0.5, grade: "Legendary", color: "#eab308", desc: "아군이 받는 피해량 50% 감소", isPassive: true },
-     {  id: 14,   name: "정기흡수", type: "vampire",value: 0.1, grade: "Legendary", color: "#eab308",  desc: "아군이 공격할 때마다 가한 피해량의 10%를 흡혈하여 체력 회복", isPassive: true }
+    { id: 2, name: "방패", type: "shield", value: 0.9, grade: "Common", color: "#94a3b8", desc: "아군이 받는 피해량 10% 감소", isPassive: true },
+    { id: 3, name: "총알 닦기", type: "bullet", value: 1.1, grade: "Common", color: "#94a3b8", desc: "아군 실시간 공격력 1.1배", isPassive: false },
+  
+    { id: 4, name: "애리 보충", type: "refill", value: 1, grade: "Rare", color: "#3b82f6", desc: "대기열에 새 애리 카드 보충", isPassive: false }, 
+    { id: 5, name: "탄막 강화", type: "bullet", value: 1.2, grade: "Rare", color: "#3b82f6", desc: "아군 실시간 공격력 1.2배", isPassive: false },
+    { id: 6, name: "사거리 증폭", type: "range", value: 1, grade: "Rare", color: "#3b82f6", desc: "아군 공격 사거리 +1칸", isPassive: true },
+    { id: 7, name: "신속 이동", type: "speed", value: 1, grade: "Rare", color: "#3b82f6", desc: "아군 이동 시 연속 2칸 이동", isPassive: true },
+   { id: 8, name: "코스트 회복", type: "cost", value: 2, grade: "Epic", color: "#a855f7", desc: "최대 코스트 한도 +2", isPassive: false },
+    { id: 9, name: "방어막 전개", type: "shield", value: 0.7, grade: "Epic", color: "#a855f7", desc: "아군이 받는 피해량 30% 감소", isPassive: true },
+    { id: 10, name: "치명적 탄막", type: "crit", value: 0.2, grade: "Epic", color: "#a855f7", desc: "공격 시 20% 확률로 2배 피해", isPassive: true },
+    { id: 11, name: "탄막 초강화", type: "bullet", value: 1.5, grade: "Epic", color: "#a855f7", desc: "아군 실시간 공격력 1.5배", isPassive: true },
+    { id: 12, name: "시간 정지", type: "slow", value: 0.3, grade: "Epic", color: "#a855f7", desc: "적 행동 시 30% 확률로 행동 불발", isPassive: true },
+   { id: 13, name: "차원균열", type: "refill", value: 1, grade: "Epic", color: "#a855f7", desc: "차원을 넘어 애리를 소환합니다.", isPassive: false },
+     { id: 14, name: "난사!!!!!!!!!!", type: "bullet", value: 2.0, grade: "Legendary", color: "#eab308", desc: "아군 실시간 공격력 2.0배", isPassive: true },
+    { id: 15, name: "UR의 축복", type: "gradeUp", value: 1, grade: "Legendary", color: "#eab308", desc: "랜덤 아군 1명 최고등급(UR) 진화", isPassive: false },
+     { id: 16, name: "애리의 품", type: "shield", value: 0.5, grade: "Legendary", color: "#eab308", desc: "아군이 받는 피해량 50% 감소", isPassive: true },
+     {  id: 17,   name: "정기흡수", type: "vampire",value: 0.1, grade: "Legendary", color: "#eab308",  desc: "아군이 공격할 때마다 가한 피해량의 10%를 흡혈하여 체력 회복", isPassive: true }
 ];
 
-// 등급별 가중치 확률 추출기 (Common: 60%, Rare: 25%, Epic: 12%, Legendary: 3%)
+// 등급별 가중치 확률 추출기 (Common: 50%, Rare: 30%, Epic: 15%, Legendary: 5%)
 function getRandomBadge() {
     const rand = Math.random() * 100;
-    let targetGrade = rand < 60 ? "Common" : rand < 85 ? "Rare" : rand < 97 ? "Epic" : "Legendary";
+    
+    // 0~50: Common (50%)
+    // 50~80: Rare (30%)
+    // 80~95: Epic (15%)
+    // 95~100: Legendary (5%)
+    let targetGrade = rand < 50 ? "Common" : 
+                      rand < 80 ? "Rare" : 
+                      rand < 95 ? "Epic" : "Legendary";
+                      
     const filtered = badgePool.filter(b => b.grade === targetGrade);
-    return filtered[Math.floor(Math.random() * filtered.length)];
+    
+    // 만약 해당 등급에 배지가 없을 경우를 대비한 안전장치
+    return filtered.length > 0 
+        ? filtered[Math.floor(Math.random() * filtered.length)] 
+        : badgePool[0]; // 혹시라도 없으면 1번 배지 반환
 }
 
 // =========================================================================
@@ -1010,7 +1024,7 @@ function resetGame() {
     document.getElementById("scoreDisplay").innerText = "점수: 0";
     playerBadges = [];        // 가방 비우기
     window.GLOBAL_ATK_MULT = 1.0; // 스탯 배수 초기화 (예시)
-    window.PLAYER_COST_LIMIT = 10; // 코스트 한도 초기화 (예시)
+    window.PLAYER_COST_LIMIT = 8; // 코스트 한도 초기화 (예시)
     
     loadLeaderboard(); // 랭킹판도 초기화 시점에 새로고침
     log("게임을 새로 시작합니다.");
@@ -1835,11 +1849,41 @@ async function applyInstantBadgeEffect(badge) {
             log(`💎 [배지 즉시발동] 최대 가용 코스트 한도가 +${badge.value} 확장되었습니다.`);
             break;
 
-        case "refill":
-            log("🔄 [배지 즉시발동] 소환 대기 리스트에 새로운 캐릭터 카드가 추가 배치됩니다.");
-            // 실제 카드 보충 로직은 이미 만들어둔 refillPlayerCard 함수를 호출하는 것으로 간단히 처리!
-            refillPlayerCard(1);
-            break;
+case "refill":
+    // 1. 배지 등급 확인 (Epic이면 고급 보충, 나머지는 일반 보충)
+    const isHighRefill = badge.grade === "Epic";
+
+    if (isHighRefill) {
+        // [고급 보충 로직 - Epic 전용]
+        try {
+            log("🌌 [차원 균열] 보이지 않는 손이 차원을 넘어 카드를 가져옵니다...");
+            
+            const users = await fetchSheetData();
+            if (users) {
+                // 모든 유저의 카드를 통합하여 풀 생성
+                const allCardsPool = users.flatMap(u => u.cards || []);
+                
+                if (allCardsPool.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * allCardsPool.length);
+                    const drawnCard = { ...allCardsPool[randomIndex] }; 
+
+                    const playerDiv = document.getElementById("playerChars");
+                    playerDiv.appendChild(createCharDiv(drawnCard));
+                    globalPlayerCards.push(drawnCard);
+
+                    log(`✨ [고급 보충] 차원 너머에서 [${drawnCard.grade}] ${drawnCard.name} 카드가 솟아올랐습니다!`);
+                }
+            }
+        } catch (err) {
+            console.error("고급 보충 오류:", err);
+            log("❌ 차원 연결에 실패했습니다.");
+        }
+    } else {
+        // [일반 보충 로직]
+        log("🔄 [배지 즉시발동] 소환 대기 리스트에 새로운 캐릭터 카드가 추가 배치됩니다.");
+        refillPlayerCard(1);
+    }
+    break;
 
      case "gradeUp":
             if (typeof playerHand !== 'undefined' && playerHand.length > 0) {
