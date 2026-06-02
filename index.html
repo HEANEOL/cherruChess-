@@ -856,6 +856,32 @@ async function onGameOverAndSubmit(finalScore) {
         await loadLeaderboard();
     }
 }
+
+onst volumeSlider = document.getElementById("volumeSlider");
+const bgm = document.getElementById("bgm");
+
+// 슬라이더 값이 변할 때마다 볼륨 조절
+volumeSlider.addEventListener("input", function() {
+    bgm.volume = this.value;
+});
+
+// 시작할 때 기본 볼륨 적용
+bgm.volume = volumeSlider.value;
+
+document.getElementById("toggleMusic").addEventListener("click", function() {
+    const bgm = document.getElementById("bgm");
+    const btn = this;
+    
+    if (bgm.paused) {
+        bgm.play();
+        btn.textContent = "음악 ON 🎵";
+        btn.classList.remove("off");
+    } else {
+        bgm.pause();
+        btn.textContent = "음악 OFF 🔇";
+        btn.classList.add("off");
+    }
+});
   // --- 게임 상태 관리 변수 ---
 let currentRound = 1;
 let totalScore = 0;
@@ -868,6 +894,9 @@ function addScore(points) {
 
 
 }
+
+
+    
 
 
 let playerBadges = []; // 현재 장착한 배지 저장소 (최대 3개)
